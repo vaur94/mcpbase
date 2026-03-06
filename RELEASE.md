@@ -1,9 +1,9 @@
-# Release Ozeti
+# Release Overview
 
-`mcpbase`, semantic versioning ve `semantic-release` kullanir.
+`mcpbase` uses semantic versioning and `semantic-release`.
 
-- commit turleri yeni surumu belirler
-- `main` dalindaki uygun commitler release workflow'unu tetikler
-- `CHANGELOG.md`, Git etiketi, GitHub release ve npm yayin akisi otomatik yonetilir
+- commit types determine the next version
+- eligible commits on `main` trigger the release workflow
+- `CHANGELOG.md`, the Git tag, the GitHub release, and the npm publish flow are managed automatically
 
-Ayrintili surec: `docs/developer-guide/release-process.md`
+Detailed process: `docs/developer-guide/release-process.md` and `docs/en/developer-guide/release-process.md`
