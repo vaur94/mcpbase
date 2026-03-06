@@ -7,7 +7,7 @@ import { createMcpServer, startStdioServer } from '../../src/transport/mcp/serve
 import { createFixtureConfig } from '../fixtures/runtime-config.js';
 
 describe('MCP transport', () => {
-  it('runtime araclarini MCP sunucusuna kaydeder', () => {
+  it('registers runtime tools on the MCP server', () => {
     const runtime = new ApplicationRuntime(
       createFixtureConfig(),
       new StderrLogger({ level: 'error', includeTimestamp: false }),
@@ -19,7 +19,7 @@ describe('MCP transport', () => {
     expect(server).toBeDefined();
   });
 
-  it('stdio transport ile baglanti kurar', async () => {
+  it('connects through the stdio transport', async () => {
     const runtime = new ApplicationRuntime(
       createFixtureConfig(),
       new StderrLogger({ level: 'error', includeTimestamp: false }),
