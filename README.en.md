@@ -41,10 +41,11 @@ node dist/index.js --config examples/mcpbase.config.json
 ## Core docs
 
 - Turkish landing documentation: `README.tr.md`
-- Architecture overview: `docs/architecture/overview.md`
-- Extension model: `docs/architecture/extension-model.md`
-- Developer guide: `docs/developer-guide/local-development.md`
-- Release process: `docs/developer-guide/release-process.md`
+- English docs index: `docs/README.en.md`
+- Architecture overview: `docs/en/architecture/overview.md`
+- Extension model: `docs/en/architecture/extension-model.md`
+- Developer guide: `docs/en/developer-guide/local-development.md`
+- Release process: `docs/en/developer-guide/release-process.md`
 
 ## Reference usage
 

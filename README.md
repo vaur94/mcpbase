@@ -1,10 +1,10 @@
 # mcpbase
 
-`mcpbase`, gelecekteki MCP sunuculari icin stdio-first bir referans mimari deposudur.
+`mcpbase` is a stdio-first reference repository for future MCP servers.
 
-- Ana dokuman: `README.tr.md`
-- English documentation: `README.en.md`
-- Mimari ozeti: `docs/architecture/overview.md`
-- Gelistirici akisi: `docs/developer-guide/local-development.md`
+- Turkish README: `README.tr.md`
+- English README: `README.en.md`
+- Turkish docs: `docs/`
+- English docs index: `docs/README.en.md`
 
-Bu depo bir alan urunu degil; yeni MCP depolarinin guvenli, test edilebilir ve tekrar kullanilabilir sekilde baslamasi icin temel alinir.
+This repository is a reusable foundation for building secure, testable, and publishable MCP servers.
