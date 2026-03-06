@@ -1,7 +1,7 @@
 {
   "name": "mcpbase",
   "version": "0.1.0",
-  "description": "Turkish-first, stdio-first temel MCP sunucu referans deposu / Turkish-first, stdio-first reference repository for future MCP servers.",
+  "description": "Stdio-first reference repository for future MCP servers.",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -64,7 +64,7 @@
     "test:integration": "vitest run tests/integration",
     "test:protocol": "npm run build && vitest run tests/protocol",
     "test:coverage": "vitest run --coverage",
-    "ci:check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "ci:check": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run test:protocol",
     "release": "semantic-release",
     "prepack": "npm run ci:check"
   },
