@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+.DS_Store
+*.log
+*.tsbuildinfo
+/.idea/
+/.vscode/
+/.turbo/
+package-lock.json.bak

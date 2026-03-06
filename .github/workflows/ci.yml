@@ -1,0 +1,59 @@
+name: Kalite ve Release
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality:
+    name: Kalite Kapilari
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kaynagi cek
+        uses: actions/checkout@v4
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bagimliliklari kur
+        run: npm ci
+
+      - name: Birlesik kalite kontrolu
+        run: npm run ci:check
+
+  release:
+    name: Semantic Release
+    needs: quality
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Kaynagi cek
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.js kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Bagimliliklari kur
+        run: npm ci
+
+      - name: Semantic release calistir
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm run release
