@@ -35,12 +35,12 @@ function createErrorResult(
     content: [
       {
         type: 'text',
-        text: error.expose ? error.message : 'Arac calisirken beklenmeyen bir hata olustu.',
+        text: error.expose ? error.message : 'An unexpected error occurred while running the tool.',
       },
     ],
     error: {
       code: error.code,
-      message: error.expose ? error.message : 'Beklenmeyen hata',
+      message: error.expose ? error.message : 'Unexpected error',
     },
     metadata: {
       requestId,
@@ -98,7 +98,7 @@ export class ApplicationRuntime {
 
       const durationMs = Math.round(performance.now() - startedAt);
       const result = createSuccessResult(tool.name, requestId, durationMs, payload);
-      this.logger.info('Arac basariyla tamamlandi.', {
+      this.logger.info('Tool execution completed successfully.', {
         requestId,
         toolName: tool.name,
         durationMs,
@@ -112,7 +112,7 @@ export class ApplicationRuntime {
       const appError = ensureAppError(error);
       const durationMs = Math.round(performance.now() - startedAt);
       const result = createErrorResult(tool.name, requestId, durationMs, appError);
-      this.logger.error('Arac cagrisi hata ile sonlandi.', {
+      this.logger.error('Tool execution failed.', {
         requestId,
         toolName: tool.name,
         durationMs,
