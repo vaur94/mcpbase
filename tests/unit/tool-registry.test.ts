@@ -4,7 +4,7 @@ import { createExampleTools } from '../../src/application/example-tools.js';
 import { ToolRegistry } from '../../src/application/tool-registry.js';
 
 describe('ToolRegistry', () => {
-  it('kayitli araci getirir ve listeler', () => {
+  it('retrieves and lists registered tools', () => {
     const registry = new ToolRegistry();
     const tools = createExampleTools();
 
@@ -16,22 +16,22 @@ describe('ToolRegistry', () => {
     expect(registry.list()).toHaveLength(2);
   });
 
-  it('ayni isimli araci ikinci kez kabul etmez', () => {
+  it('rejects a second registration with the same name', () => {
     const registry = new ToolRegistry();
     const tool = createExampleTools()[0];
 
     if (!tool) {
-      throw new Error('Ornek arac bulunamadi.');
+      throw new Error('Example tool was not found.');
     }
 
     registry.register(tool);
 
-    expect(() => registry.register(tool)).toThrow(/ikinci arac kaydi/u);
+    expect(() => registry.register(tool)).toThrow(/Duplicate tool registration/u);
   });
 
-  it('olmayan araci istendiginde hata verir', () => {
+  it('throws when a requested tool does not exist', () => {
     const registry = new ToolRegistry();
 
-    expect(() => registry.get('olmayan')).toThrow(/Arac bulunamadi/u);
+    expect(() => registry.get('missing')).toThrow(/Tool not found/u);
   });
 });

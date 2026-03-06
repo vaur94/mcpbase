@@ -39,7 +39,7 @@ export function ensureAppError(error: unknown): AppError {
     });
   }
 
-  return new AppError('TOOL_EXECUTION_ERROR', 'Bilinmeyen uygulama hatasi olustu.', {
+  return new AppError('TOOL_EXECUTION_ERROR', 'An unknown application error occurred.', {
     details: { error },
     expose: false,
   });

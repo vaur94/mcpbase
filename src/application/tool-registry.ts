@@ -6,7 +6,7 @@ export class ToolRegistry {
 
   public register(tool: ToolDefinition): void {
     if (this.tools.has(tool.name)) {
-      throw new AppError('CONFIG_ERROR', `Ayni isimle ikinci arac kaydi var: ${tool.name}`);
+      throw new AppError('CONFIG_ERROR', `Duplicate tool registration for name: ${tool.name}`);
     }
 
     this.tools.set(tool.name, tool);
@@ -15,7 +15,7 @@ export class ToolRegistry {
   public get(name: string): ToolDefinition {
     const tool = this.tools.get(name);
     if (!tool) {
-      throw new AppError('TOOL_NOT_FOUND', `Arac bulunamadi: ${name}`);
+      throw new AppError('TOOL_NOT_FOUND', `Tool not found: ${name}`);
     }
 
     return tool;
