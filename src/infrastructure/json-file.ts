@@ -17,7 +17,7 @@ export async function readJsonFile(path: string): Promise<unknown> {
     const content = await readFile(path, 'utf8');
     return JSON.parse(content) as unknown;
   } catch (error) {
-    throw new AppError('CONFIG_ERROR', `JSON dosyasi okunamadi: ${path}`, {
+    throw new AppError('CONFIG_ERROR', `Failed to read JSON file: ${path}`, {
       cause: error,
       expose: true,
     });

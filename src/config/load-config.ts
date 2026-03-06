@@ -23,7 +23,7 @@ function envBoolean(name: string): boolean | undefined {
     return false;
   }
 
-  throw new AppError('CONFIG_ERROR', `${name} yalnizca true veya false olabilir.`);
+  throw new AppError('CONFIG_ERROR', `${name} must be either true or false.`);
 }
 
 function envList(name: string): string[] | undefined {
@@ -71,7 +71,7 @@ export async function loadConfig(argv: string[]): Promise<RuntimeConfig> {
         (await fileExists(configPath))
           ? await readJsonFile(configPath)
           : (() => {
-              throw new AppError('CONFIG_ERROR', `Konfigurasyon dosyasi bulunamadi: ${configPath}`);
+              throw new AppError('CONFIG_ERROR', `Configuration file not found: ${configPath}`);
             })(),
       )
     : {};

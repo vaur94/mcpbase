@@ -33,21 +33,21 @@ afterEach(() => {
 });
 
 describe('loadConfig', () => {
-  it('varsayilan, dosya, env ve CLI onceligini uygular', async () => {
+  it('applies default, file, environment, and CLI precedence', async () => {
     const tempDir = await mkdtemp(path.join(tmpdir(), 'mcpbase-config-'));
     const configPath = path.join(tempDir, 'mcpbase.json');
 
     await writeFile(
       configPath,
       JSON.stringify({
-        server: { name: 'dosya-sunucusu' },
+        server: { name: 'file-server' },
         logging: { level: 'warn' },
         security: { commands: { allowed: ['git'] } },
       }),
       'utf8',
     );
 
-    process.env.MCPBASE_SERVER_NAME = 'env-sunucusu';
+    process.env.MCPBASE_SERVER_NAME = 'env-server';
     process.env.MCPBASE_LOG_LEVEL = 'error';
     process.env.MCPBASE_ALLOWED_COMMANDS = 'npm,node';
 
@@ -55,21 +55,21 @@ describe('loadConfig', () => {
       '--config',
       configPath,
       '--server-name',
-      'cli-sunucusu',
+      'cli-server',
       '--log-level',
       'debug',
       '--allow-command=pnpm',
     ]);
 
-    expect(result.server.name).toBe('cli-sunucusu');
+    expect(result.server.name).toBe('cli-server');
     expect(result.logging.level).toBe('debug');
     expect(result.security.commands.allowed).toEqual(['pnpm']);
     expect(result.server.version).toBe('0.1.0');
   });
 
-  it('olmayan config dosyasinda hata verir', async () => {
-    await expect(loadConfig(['--config', '/olmayan/dosya.json'])).rejects.toThrow(
-      /Konfigurasyon dosyasi bulunamadi/u,
+  it('throws when the config file does not exist', async () => {
+    await expect(loadConfig(['--config', '/missing/file.json'])).rejects.toThrow(
+      /Configuration file not found/u,
     );
   });
 });

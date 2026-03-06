@@ -8,16 +8,16 @@ import { AppError, ensureAppError } from '../../src/core/app-error.js';
 import { fileExists, readJsonFile } from '../../src/infrastructure/json-file.js';
 
 describe('error and file helpers', () => {
-  it('AppError olmayan hatalari normalize eder', () => {
-    const normalized = ensureAppError(new Error('patladi'));
-    const fallback = ensureAppError('ham-hata');
+  it('normalizes non-AppError values', () => {
+    const normalized = ensureAppError(new Error('boom'));
+    const fallback = ensureAppError('raw-error');
 
     expect(normalized).toBeInstanceOf(AppError);
     expect(normalized.code).toBe('TOOL_EXECUTION_ERROR');
     expect(fallback.code).toBe('TOOL_EXECUTION_ERROR');
   });
 
-  it('dosya varligini ve JSON okumayi dogrular', async () => {
+  it('checks file existence and reads JSON', async () => {
     const tempDir = await mkdtemp(path.join(tmpdir(), 'mcpbase-file-'));
     const jsonPath = path.join(tempDir, 'valid.json');
     const brokenPath = path.join(tempDir, 'broken.json');
@@ -28,6 +28,6 @@ describe('error and file helpers', () => {
     await expect(fileExists(jsonPath)).resolves.toBe(true);
     await expect(fileExists(path.join(tempDir, 'missing.json'))).resolves.toBe(false);
     await expect(readJsonFile(jsonPath)).resolves.toEqual({ ok: true });
-    await expect(readJsonFile(brokenPath)).rejects.toThrow(/JSON dosyasi okunamadi/u);
+    await expect(readJsonFile(brokenPath)).rejects.toThrow(/Failed to read JSON file/u);
   });
 });
