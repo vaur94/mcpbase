@@ -1,10 +1,10 @@
-# Davranis Kurallari
+# Code of Conduct
 
-Bu proje acik, saygili ve teknik olarak yapici bir is birligi ortami hedefler.
+This project aims for an open, respectful, and technically constructive collaboration environment.
 
-- kisiye degil probleme odaklanin
-- geri bildirimde somut ve uygulanabilir olun
-- dislayici, saldirgan veya kucumseyici dil kullanmayin
-- herkes icin ogrenilebilir bir kod tabani birakmaya calisin
+- focus on the problem, not the person
+- keep feedback concrete and actionable
+- do not use exclusionary, aggressive, or dismissive language
+- try to leave the codebase learnable for everyone
 
-Bakimcilar gerekli gordugunde tartismalari duzenleme ve uygunsuz davranislari sinirlama hakkini sakli tutar.
+Maintainers reserve the right to moderate discussions and restrict inappropriate behavior when needed.

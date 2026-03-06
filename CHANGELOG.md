@@ -1,3 +1,3 @@
 # Changelog
 
-Bu dosya `semantic-release` tarafindan conventional commit akisi ile otomatik guncellenir.
+This file is automatically updated by `semantic-release` from the conventional commit history.

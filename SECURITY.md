@@ -1,20 +1,20 @@
-# Guvenlik Politikasi
+# Security Policy
 
-## Kapsam
+## Scope
 
-`mcpbase`, stdio-first bir referans tabandir. Guvenlik modeli deny-by-default mantigi uzerine kuruludur ve gelecekteki turetilmis sunucularin da ayni anlayisi korumasini bekler.
+`mcpbase` is a stdio-first reference base. Its security model follows deny-by-default rules, and derived servers are expected to keep the same posture.
 
-## Bildirim sureci
+## Reporting process
 
-- Guvenlik acigi bulursaniz halka acik issue yerine ozel iletisim tercih edin.
-- Uretim ortamina etkisi, tekrar uretim adimlari ve olasi etki alanini acik yazin.
-- Bakimci tarafi once sorunu dogrular, sonra duzeltme ve duyuru planini olusturur.
+- If you find a security issue, prefer private contact over a public issue.
+- Include impact, reproduction steps, and the likely blast radius.
+- Maintainers validate the issue first, then prepare the fix and disclosure plan.
 
-## Temel ilkeler
+## Core principles
 
-- riskli ozellikler acik izin olmadan etkinlesmez
-- stdout log icin kullanilmaz
-- config alanlari belgesiz birakilmaz
-- yeni araclar guard ve test olmadan eklenmez
+- risky features are never enabled without explicit permission
+- stdout is not used for logging
+- config fields are never left undocumented
+- new tools require guards and tests
 
-Detay model icin `docs/security/security-model.md` dosyasina bakin.
+For the detailed model, see `docs/security/security-model.md` and `docs/en/security/security-model.md`.

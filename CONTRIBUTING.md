@@ -1,22 +1,22 @@
-# Katki Rehberi
+# Contributing
 
-## Beklenen akış
+## Expected workflow
 
-1. Kucuk ve anlamli degisiklikler yapin.
-2. `npm run ci:check` komutunu gecmeden PR acmayin.
-3. Conventional commit mesajlarini kullanin.
-4. Yeni arac ekliyorsaniz ilgili dokumani ve testleri ayni PR icinde tamamlayin.
+1. Make small, meaningful changes.
+2. Do not open a pull request unless `npm run ci:check` passes.
+3. Use conventional commit messages.
+4. If you add a new tool, include its documentation and tests in the same pull request.
 
-## Ne beklenir
+## Expectations
 
-- placeholder birakilmaz
-- TODO birakilmaz
-- kritik akislarda testsiz degisiklik kabul edilmez
-- stdout yalnizca MCP protokolu icin kullanilir
+- no placeholders
+- no TODO comments
+- no untested changes in critical flows
+- stdout is reserved for the MCP protocol only
 
-## Inceleme odaklari
+## Review focus
 
-- katman sinirlari korunuyor mu
-- yeni config alanlari dokumante edildi mi
-- guvenlik guard ihtiyaci dogru ele alindi mi
-- release ve CI akisi etkileniyor mu
+- layer boundaries stay intact
+- new config fields are documented
+- security guard needs are handled correctly
+- release and CI flows remain healthy
