@@ -1,6 +1,6 @@
 {
   "server": {
-    "name": "ornek-mcp-sunucusu",
+    "name": "example-mcp-server",
     "version": "1.0.0"
   },
   "logging": {

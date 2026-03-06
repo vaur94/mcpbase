@@ -16,8 +16,8 @@ export function createExampleTools(): ToolDefinition[] {
     typeof serverInfoOutputSchema
   > = {
     name: 'server_info',
-    title: 'Sunucu Bilgisi',
-    description: 'Calisan MCP tabaninin etkin ayar ozeti ile surum bilgisini dondurur.',
+    title: 'Server Info',
+    description: 'Returns the running MCP base version and a summary of enabled features.',
     inputSchema: serverInfoInputSchema,
     outputSchema: serverInfoOutputSchema,
     security: {
@@ -31,7 +31,7 @@ export function createExampleTools(): ToolDefinition[] {
       return {
         content: [
           createTextContent(
-            `${context.config.server.name} ${context.config.server.version} hazir. Etkin ozellikler: ${enabledFeatures.join(', ') || 'yok'}.`,
+            `${context.config.server.name} ${context.config.server.version} is ready. Enabled features: ${enabledFeatures.join(', ') || 'none'}.`,
           ),
         ],
         structuredContent: {
@@ -57,8 +57,8 @@ export function createExampleTools(): ToolDefinition[] {
     typeof textTransformOutputSchema
   > = {
     name: 'text_transform',
-    title: 'Metin Donusturucu',
-    description: 'Guvenli ve saf bir referans arac olarak verilen metni donusturur.',
+    title: 'Text Transform',
+    description: 'Transforms text as a safe, side-effect-free reference tool.',
     inputSchema: textTransformInputSchema,
     outputSchema: textTransformOutputSchema,
     security: {

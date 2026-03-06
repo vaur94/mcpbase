@@ -6,7 +6,7 @@ import { StderrLogger } from '../../src/logging/stderr-logger.js';
 import { createFixtureConfig } from '../fixtures/runtime-config.js';
 
 describe('example tools', () => {
-  it('server_info aracini calistirir', async () => {
+  it('runs the server_info tool', async () => {
     const runtime = new ApplicationRuntime(
       createFixtureConfig(),
       new StderrLogger({ level: 'error', includeTimestamp: false }),
@@ -23,7 +23,7 @@ describe('example tools', () => {
     });
   });
 
-  it('text_transform aracinin diger modlarini da kapsar', async () => {
+  it('covers the remaining text_transform modes', async () => {
     const runtime = new ApplicationRuntime(
       createFixtureConfig(),
       new StderrLogger({ level: 'error', includeTimestamp: false }),
