@@ -28,12 +28,12 @@ export async function bootstrap(argv: string[] = process.argv.slice(2)): Promise
   const server = createMcpServer(runtime);
 
   await startStdioServer(server);
-  logger.info('MCP stdio sunucusu hazir.', {
+  logger.info('MCP stdio server is ready.', {
     toolName: 'bootstrap',
   });
 
   const shutdown = (signal: NodeJS.Signals) => {
-    logger.info('Kapatma sinyali alindi.', { toolName: signal });
+    logger.info('Shutdown signal received.', { toolName: signal });
     process.exit(0);
   };
 

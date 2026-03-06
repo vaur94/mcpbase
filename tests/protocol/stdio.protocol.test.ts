@@ -12,7 +12,7 @@ afterEach(async () => {
 });
 
 describe('stdio protocol', () => {
-  it('initialize el sikismasi sonrasinda araclari listeler', async () => {
+  it('lists tools after the initialize handshake', async () => {
     const client = new Client({ name: 'mcpbase-test-client', version: '1.0.0' });
     clients.push(client);
 
@@ -29,7 +29,7 @@ describe('stdio protocol', () => {
     );
   });
 
-  it('tools/call uzerinden referans araci cagirir', async () => {
+  it('calls the reference tool through tools/call', async () => {
     const client = new Client({ name: 'mcpbase-test-client', version: '1.0.0' });
     clients.push(client);
 
@@ -43,7 +43,7 @@ describe('stdio protocol', () => {
     const result = await client.callTool({
       name: 'text_transform',
       arguments: {
-        text: 'Merhaba Dunya',
+        text: 'Hello World',
         mode: 'lowercase',
       },
     });
@@ -59,9 +59,9 @@ describe('stdio protocol', () => {
       .parse(result);
 
     expect(parsed.content[0]?.type).toBe('text');
-    expect(parsed.content[0]?.text).toBe('merhaba dunya');
+    expect(parsed.content[0]?.text).toBe('hello world');
     expect(parsed.structuredContent).toEqual({
-      transformedText: 'merhaba dunya',
+      transformedText: 'hello world',
       mode: 'lowercase',
     });
   });
