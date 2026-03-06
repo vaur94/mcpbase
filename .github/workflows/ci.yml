@@ -31,6 +31,8 @@ jobs:
     needs: quality
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     permissions:
       contents: write
       issues: write
@@ -52,8 +54,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Skip release when NPM token is missing
+        if: env.NPM_TOKEN == ''
+        run: echo "NPM_TOKEN is not configured; skipping semantic-release."
+
       - name: Run semantic-release
+        if: env.NPM_TOKEN != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm run release
