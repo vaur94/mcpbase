@@ -9,7 +9,7 @@ export interface CliParseResult {
 function expectValue(argv: string[], index: number, flag: string): string {
   const next = argv[index + 1];
   if (!next || next.startsWith('--')) {
-    throw new AppError('CONFIG_ERROR', `${flag} parametresi icin bir deger bekleniyor.`);
+    throw new AppError('CONFIG_ERROR', `${flag} expects a value.`);
   }
 
   return next;
@@ -24,7 +24,7 @@ function parseBoolean(value: string): boolean {
     return false;
   }
 
-  throw new AppError('CONFIG_ERROR', `Gecersiz boolean degeri: ${value}`);
+  throw new AppError('CONFIG_ERROR', `Invalid boolean value: ${value}`);
 }
 
 export function parseCliArgs(argv: string[]): CliParseResult {
@@ -135,7 +135,7 @@ export function parseCliArgs(argv: string[]): CliParseResult {
           break;
         }
 
-        throw new AppError('CONFIG_ERROR', `Bilinmeyen arguman: ${token}`);
+        throw new AppError('CONFIG_ERROR', `Unknown argument: ${token}`);
       }
     }
   }

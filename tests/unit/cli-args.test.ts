@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCliArgs } from '../../src/infrastructure/cli-args.js';
 
 describe('parseCliArgs', () => {
-  it('desteklenen override alanlarini okur', () => {
+  it('reads supported override fields', () => {
     const result = parseCliArgs([
       '--config',
       'config.json',
@@ -32,11 +32,11 @@ describe('parseCliArgs', () => {
     });
   });
 
-  it('bilinmeyen argumani reddeder', () => {
-    expect(() => parseCliArgs(['--bilinmeyen'])).toThrow(/Bilinmeyen arguman/u);
+  it('rejects an unknown argument', () => {
+    expect(() => parseCliArgs(['--unknown'])).toThrow(/Unknown argument/u);
   });
 
-  it('eksik deger durumunda hata verir', () => {
-    expect(() => parseCliArgs(['--config'])).toThrow(/deger bekleniyor/u);
+  it('throws when a required value is missing', () => {
+    expect(() => parseCliArgs(['--config'])).toThrow(/expects a value/u);
   });
 });

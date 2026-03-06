@@ -8,7 +8,7 @@ import {
 import { createFixtureConfig } from '../fixtures/runtime-config.js';
 
 describe('security guards', () => {
-  it('aktif olmayan ozelligi reddeder', () => {
+  it('rejects a disabled feature', () => {
     const config = createFixtureConfig({
       security: {
         features: {
@@ -19,11 +19,11 @@ describe('security guards', () => {
     });
 
     expect(() => assertFeatureEnabled(config.security, 'serverInfoTool')).toThrow(
-      /Ozellik kapali/u,
+      /Feature is disabled/u,
     );
   });
 
-  it('izinli komutu kabul eder ve digerini reddeder', () => {
+  it('accepts an allowed command and rejects other commands', () => {
     const config = createFixtureConfig({
       security: {
         commands: {
@@ -33,10 +33,12 @@ describe('security guards', () => {
     });
 
     expect(() => assertAllowedCommand(config.security, 'git status')).not.toThrow();
-    expect(() => assertAllowedCommand(config.security, 'npm test')).toThrow(/Komut izni yok/u);
+    expect(() => assertAllowedCommand(config.security, 'npm test')).toThrow(
+      /Command is not allowed/u,
+    );
   });
 
-  it('izinli kok disindaki yollari reddeder', () => {
+  it('rejects paths outside the allowed root', () => {
     const config = createFixtureConfig({
       security: {
         paths: {
@@ -46,6 +48,6 @@ describe('security guards', () => {
     });
 
     expect(() => assertAllowedPath(config.security, '/tmp/mcpbase/child')).not.toThrow();
-    expect(() => assertAllowedPath(config.security, '/etc/passwd')).toThrow(/Yol izni yok/u);
+    expect(() => assertAllowedPath(config.security, '/etc/passwd')).toThrow(/Path is not allowed/u);
   });
 });

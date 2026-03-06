@@ -10,14 +10,14 @@ export function assertFeatureEnabled(
   feature: keyof SecurityConfig['features'],
 ): void {
   if (!security.features[feature]) {
-    throw new AppError('PERMISSION_DENIED', `Ozellik kapali: ${feature}`);
+    throw new AppError('PERMISSION_DENIED', `Feature is disabled: ${feature}`);
   }
 }
 
 export function assertAllowedCommand(security: SecurityConfig, command: string): void {
   const baseCommand = command.trim().split(/\s+/u)[0] ?? '';
   if (!security.commands.allowed.includes(baseCommand)) {
-    throw new AppError('PERMISSION_DENIED', `Komut izni yok: ${baseCommand}`);
+    throw new AppError('PERMISSION_DENIED', `Command is not allowed: ${baseCommand}`);
   }
 }
 
@@ -30,6 +30,6 @@ export function assertAllowedPath(security: SecurityConfig, targetPath: string):
       (root) => normalizedTarget === root || normalizedTarget.startsWith(`${root}${path.sep}`),
     )
   ) {
-    throw new AppError('PERMISSION_DENIED', `Yol izni yok: ${normalizedTarget}`);
+    throw new AppError('PERMISSION_DENIED', `Path is not allowed: ${normalizedTarget}`);
   }
 }
