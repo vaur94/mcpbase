@@ -28,13 +28,30 @@ export class AppError<TCode extends string = BaseAppErrorCode> extends Error {
   }
 }
 
-export function ensureAppError<TCode extends string>(error: unknown): AppError<TCode> {
+export function ensureAppError(
+  error: unknown,
+  fallbackCode?: undefined,
+): AppError<BaseAppErrorCode>;
+export function ensureAppError<TCode extends BaseAppErrorCode>(
+  error: unknown,
+  fallbackCode?: TCode,
+): AppError<TCode>;
+export function ensureAppError<TCode extends string>(
+  error: unknown,
+  fallbackCode?: TCode,
+): AppError<TCode | AppErrorCode>;
+export function ensureAppError<TCode extends string = AppErrorCode>(
+  error: unknown,
+  fallbackCode?: TCode,
+): AppError<TCode | AppErrorCode> {
   if (error instanceof AppError) {
-    return error as AppError<TCode>;
+    return error as AppError<TCode | AppErrorCode>;
   }
 
-  const baseError = new AppError<BaseAppErrorCode>(
-    'TOOL_EXECUTION_ERROR',
+  const code = (fallbackCode ?? 'TOOL_EXECUTION_ERROR') as TCode | AppErrorCode;
+
+  const baseError = new AppError<TCode | AppErrorCode>(
+    code,
     error instanceof Error ? error.message : 'An unknown application error occurred.',
     {
       cause: error instanceof Error ? error : undefined,
@@ -43,5 +60,5 @@ export function ensureAppError<TCode extends string>(error: unknown): AppError<T
     },
   );
 
-  return baseError as AppError<TCode>;
+  return baseError;
 }

@@ -72,6 +72,13 @@ describe('AppError - generic refactor', () => {
       expect(result.expose).toBe(false);
     });
 
+    it('belirtilen fallback kodunu kullanir', () => {
+      const result = ensureAppError(new Error('Boom'), 'STORAGE_ERROR');
+
+      expect(result).toBeInstanceOf(AppError);
+      expect(result.code).toBe('STORAGE_ERROR');
+    });
+
     it('bilinmeyen degeri AppError olarak sarmalar', () => {
       const result = ensureAppError(42);
 
@@ -86,6 +93,15 @@ describe('AppError - generic refactor', () => {
       const result = ensureAppError<MyErrorCode>(error);
 
       expect(result.code).toBe('NETWORK_ERROR');
+    });
+
+    it('var olan AppError korumayi uygular', () => {
+      type MyErrorCode = BaseAppErrorCode | 'STORAGE_ERROR';
+      const existing = new AppError<MyErrorCode>('STORAGE_ERROR', 'Depolama hatası');
+      const result = ensureAppError(existing, 'CONFIG_ERROR');
+
+      expect(result).toBe(existing);
+      expect(result.code).toBe('STORAGE_ERROR');
     });
   });
 
