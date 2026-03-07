@@ -116,6 +116,12 @@ export { registerPrompts, registerPromptTemplates } from './capabilities/prompts
 export type { McpLogLevel, McpLoggingBridge } from './capabilities/logging.js';
 export { createMcpLoggingBridge } from './capabilities/logging.js';
 
+export type { SamplingRequest, SamplingResponse, SamplingHelper } from './capabilities/sampling.js';
+export { createSamplingHelper } from './capabilities/sampling.js';
+
+export type { Root, RootsChangeHandler, RootsHandler } from './capabilities/roots.js';
+export { createRootsHandler } from './capabilities/roots.js';
+
 export async function bootstrap<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
   TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,
