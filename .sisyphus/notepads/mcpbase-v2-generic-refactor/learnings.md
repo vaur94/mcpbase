@@ -85,3 +85,18 @@
 - `src/security/index.ts` re-exports guards from `../security/guards.js` + exports `PERMISSION_DENIED` const
 - Build produces `dist/examples/index.js` and `dist/security/index.js` as expected
 - Tests pass (5 pre-existing streamable-http test failures unrelated to this task)
+
+## Task 17 Learnings (Streamable HTTP Transport)
+
+- `StreamableHTTPServerTransport` from `@modelcontextprotocol/sdk/server/streamableHttp.js` wraps `WebStandardStreamableHTTPServerTransport` with Node.js HTTP compatibility
+- Constructor options: `{ sessionIdGenerator?: () => string }` — undefined for stateless, function for stateful
+- `handleRequest(req: IncomingMessage, res: ServerResponse, parsedBody?: unknown)` — 3 params, parsedBody is optional for pre-parsed body from body-parser middleware
+- The transport uses `@hono/node-server` internally to convert Node.js HTTP to Web Standard APIs — this means unit tests with fake `{}` req/res objects fail on `outgoing.writeHead`
+- Solution: mock the entire SDK module with `vi.mock()` to avoid hitting real HTTP internals in unit tests
+- The adapter is intentionally thin — no built-in HTTP server, consumer provides their own req/res from Express/Fastify/etc.
+
+## Task 18 Learnings (Transport Factory)
+
+- `src/transport/transport-factory.ts` should stay as a pure routing layer: discriminated union in, existing transport starter out
+- Unit tests can mock `../../src/transport/mcp/server.js` and `../../src/transport/mcp/streamable-http.js` directly, which keeps the factory test focused on delegation instead of MCP SDK internals
+- Exporting the factory through `src/index.ts` is enough to make the new API available without changing bootstrap behavior yet
