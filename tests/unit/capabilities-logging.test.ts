@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import type { McpLogLevel, McpLoggingBridge } from '../../src/capabilities/logging.js';
@@ -6,7 +8,7 @@ import { createMcpLoggingBridge } from '../../src/capabilities/logging.js';
 function createMockServer() {
   return {
     server: {
-      sendLoggingMessage: vi.fn(),
+      sendLoggingMessage: vi.fn().mockResolvedValue(undefined),
     },
   };
 }
@@ -81,5 +83,23 @@ describe('createMcpLoggingBridge', () => {
     }
 
     expect(server.server.sendLoggingMessage).toHaveBeenCalledTimes(levels.length);
+  });
+
+  it('istemciye iletim hatasini stderr uzerinden raporlar', async () => {
+    const server = createMockServer();
+    server.server.sendLoggingMessage.mockRejectedValue(new Error('baglanti koptu'));
+
+    const bridge = createMcpLoggingBridge(server as never);
+    const stderrWriteSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+    bridge.log('error', 'uygulama', { message: 'iletilemedi' });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(stderrWriteSpy).toHaveBeenCalledWith(
+      'MCP log mesaji istemciye iletilemedi: baglanti koptu\n',
+    );
+
+    stderrWriteSpy.mockRestore();
   });
 });

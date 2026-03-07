@@ -43,3 +43,20 @@
 - `.extend()` preserves types properly via generic inference
 - `as unknown as Record<string, z.ZodTypeAny>` needed for the `.shape` cast (not `as any`)
 - `.partial()` and `.optional()` work identically in Zod v4 as v3
+
+## Task 14 Learnings
+
+- MCP logging bridge can stay as a thin capability wrapper: keep its own RFC 5424 severity table and forward with `server.server.sendLoggingMessage(...)`
+- `McpServer` logging send API is async, but a bridge with `void` logger surface can safely fire-and-forget via `void server.server.sendLoggingMessage(...)`
+- Logging bridge tests should mock `sendLoggingMessage()` with a resolved promise, because the SDK method is async and rejection handling is part of the bridge contract
+- MCP prompt registration callbacks in the SDK must accept the extra handler context parameter even when unused, otherwise `server.prompt(...)` overload resolution fails under `tsc`
+
+## Task 13: Prompt Registration Abstraction
+
+- MCP SDK `server.prompt()` has 4 overloads: (name, cb), (name, desc, cb), (name, argsSchema, cb), (name, desc, argsSchema, cb)
+- SDK uses `ZodRawShapeCompat = Record<string, AnySchema>` which is different from zod v4's `z.ZodRawShape`
+- SDK's `ShapeOutput<Shape>` type is NOT the same as `z.infer<z.ZodObject<Shape>>` — they're structurally equivalent but TS can't prove it
+- Solution: make `registerPromptTemplates` non-generic (matching resources.ts pattern), let SDK infer types at call site
+- `PromptCallback` type is exported from `@modelcontextprotocol/sdk/server/mcp.js` — useful for typing static prompt callbacks
+- For template callbacks, inline the callback in the `server.prompt()` call so SDK can infer the `Args` generic from `argsSchema`
+- `PromptTemplateDefinition` interface keeps generic `TArgs` for type safety at definition sites, but register function uses default `z.ZodRawShape`

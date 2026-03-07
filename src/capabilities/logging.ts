@@ -1,4 +1,8 @@
+import process from 'node:process';
+
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+import { sanitizeMessage } from '../shared/text.js';
 
 export type McpLogLevel =
   | 'debug'
@@ -36,11 +40,17 @@ class DefaultMcpLoggingBridge implements McpLoggingBridge {
       return;
     }
 
-    void this.server.server.sendLoggingMessage({
-      level,
-      logger,
-      data,
-    });
+    void this.server.server
+      .sendLoggingMessage({
+        level,
+        logger,
+        data,
+      })
+      .catch((error: unknown) => {
+        const detail = error instanceof Error ? error.message : 'bilinmeyen hata';
+        const message = sanitizeMessage(`MCP log mesaji istemciye iletilemedi: ${detail}`);
+        process.stderr.write(`${message}\n`);
+      });
   }
 
   public setLevel(level: McpLogLevel): void {
