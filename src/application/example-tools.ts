@@ -1,9 +1,10 @@
 import { z } from 'zod';
 
 import { createTextContent } from '../core/result.js';
-import type { ToolDefinition } from '../contracts/tool-contract.js';
+import type { ToolExecutionContext } from '../core/execution-context.js';
+import type { SecureToolDefinition } from '../security/tool-security.js';
 
-export function createExampleTools(): ToolDefinition[] {
+export function createExampleTools(): SecureToolDefinition[] {
   const serverInfoInputSchema = z.object({});
   const serverInfoOutputSchema = z.object({
     name: z.string(),
@@ -11,9 +12,10 @@ export function createExampleTools(): ToolDefinition[] {
     enabledFeatures: z.array(z.string()),
   });
 
-  const serverInfoTool: ToolDefinition<
+  const serverInfoTool: SecureToolDefinition<
     typeof serverInfoInputSchema,
-    typeof serverInfoOutputSchema
+    typeof serverInfoOutputSchema,
+    ToolExecutionContext
   > = {
     name: 'server_info',
     title: 'Server Info',
@@ -52,7 +54,7 @@ export function createExampleTools(): ToolDefinition[] {
     mode: z.enum(['uppercase', 'lowercase', 'reverse', 'trim']),
   });
 
-  const textTransformTool: ToolDefinition<
+  const textTransformTool: SecureToolDefinition<
     typeof textTransformInputSchema,
     typeof textTransformOutputSchema
   > = {
