@@ -1,6 +1,6 @@
-import type { RuntimeConfig } from '../contracts/runtime-config.js';
+import type { BaseRuntimeConfig, RuntimeConfig } from '../contracts/runtime-config.js';
 
-export const defaultConfig: RuntimeConfig = {
+export const baseDefaultConfig: BaseRuntimeConfig = {
   server: {
     name: 'mcpbase',
     version: '0.1.0',
@@ -9,6 +9,10 @@ export const defaultConfig: RuntimeConfig = {
     level: 'info',
     includeTimestamp: true,
   },
+};
+
+export const defaultConfig: RuntimeConfig = {
+  ...baseDefaultConfig,
   security: {
     features: {
       serverInfoTool: true,
