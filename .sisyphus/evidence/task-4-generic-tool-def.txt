@@ -1,0 +1,55 @@
+# Task 4 Evidence: Generic ToolDefinition<TInput, TOutput, TContext> + ToolAnnotations
+
+## Date: 2026-03-07
+
+## Changes Made
+
+### 1. Modified: `src/contracts/tool-contract.ts`
+
+- Added `TContext extends BaseToolExecutionContext = ToolExecutionContext` generic parameter to `ToolDefinition`
+- Updated `execute(input, context)` signature to use `TContext` instead of hardcoded `ToolExecutionContext`
+- Added `ToolAnnotations` interface with fields: `title`, `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`
+- Added optional `annotations` property to `ToolDefinition`
+- Re-exported `BaseToolExecutionContext` (was importing only `ToolExecutionContext`)
+
+### 2. Created: `tests/unit/tool-contract.test.ts`
+
+- 13 tests covering:
+  - Default TContext parameter
+  - Custom TContext parameter
+  - TInput and TOutput type inference
+  - Execute method with ToolExecutionContext
+  - ToolSecurityDefinition
+  - ToolAnnotations (all fields, minimum, optional fields)
+  - ToolSuccessPayload
+  - ToolInputSchema and ToolOutputSchema types
+
+## Verification Results
+
+### Tests
+```
+✓ tests/unit/tool-contract.test.ts (13 tests)
+Test Files  1 passed (1)
+Tests       13 passed (13)
+```
+
+### Type Check
+```
+npx tsc --noEmit → ZERO ERRORS
+```
+
+### Build
+```
+npm run build → SUCCESS
+dist/index.js     19.08 KB
+dist/index.js.map 41.12 KB
+dist/index.d.ts   5.82 KB
+```
+
+### Existing Tools Compatibility
+`src/application/example-tools.ts` compiles without errors using default TContext.
+
+## Git Commit
+```
+refactor(tool): make ToolDefinition generic with TContext parameter
+```

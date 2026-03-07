@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 
-import type { ToolExecutionContext } from '../core/execution-context.js';
+import type { BaseToolExecutionContext, ToolExecutionContext } from '../core/execution-context.js';
 import type { TextContentBlock } from '../core/result.js';
 import type { RuntimeConfig } from './runtime-config.js';
 
@@ -16,9 +16,18 @@ export interface ToolSuccessPayload {
   readonly structuredContent?: Record<string, unknown>;
 }
 
+export interface ToolAnnotations {
+  readonly title?: string;
+  readonly readOnlyHint?: boolean;
+  readonly destructiveHint?: boolean;
+  readonly idempotentHint?: boolean;
+  readonly openWorldHint?: boolean;
+}
+
 export interface ToolDefinition<
   TInput extends ToolInputSchema = ToolInputSchema,
   TOutput extends ToolOutputSchema | undefined = ToolOutputSchema | undefined,
+  TContext extends BaseToolExecutionContext = ToolExecutionContext,
 > {
   readonly name: string;
   readonly title: string;
@@ -26,5 +35,6 @@ export interface ToolDefinition<
   readonly inputSchema: TInput;
   readonly outputSchema?: TOutput;
   readonly security?: ToolSecurityDefinition;
-  execute(input: z.infer<TInput>, context: ToolExecutionContext): Promise<ToolSuccessPayload>;
+  readonly annotations?: ToolAnnotations;
+  execute(input: z.infer<TInput>, context: TContext): Promise<ToolSuccessPayload>;
 }
