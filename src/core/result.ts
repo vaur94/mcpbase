@@ -6,6 +6,8 @@ export interface TextContentBlock {
 }
 
 export interface SuccessResult {
+  readonly [key: string]: unknown;
+  readonly isError: false;
   readonly content: TextContentBlock[];
   readonly structuredContent?: Record<string, unknown>;
   readonly metadata: {
@@ -16,6 +18,8 @@ export interface SuccessResult {
 }
 
 export interface ErrorResult {
+  readonly [key: string]: unknown;
+  readonly isError: true;
   readonly content: TextContentBlock[];
   readonly error: {
     readonly code: AppError['code'];
@@ -26,6 +30,10 @@ export interface ErrorResult {
     readonly toolName: string;
     readonly durationMs: number;
   };
+}
+
+export function isErrorResult(result: SuccessResult | ErrorResult): result is ErrorResult {
+  return result.isError;
 }
 
 export function createTextContent(text: string): TextContentBlock {

@@ -33,6 +33,7 @@ function createSuccessResult(
   payload: Awaited<ReturnType<ToolDefinition['execute']>>,
 ): SuccessResult {
   return {
+    isError: false,
     content: payload.content,
     structuredContent: payload.structuredContent,
     metadata: {
@@ -50,6 +51,7 @@ function createErrorResult(
   error: AppError<BaseAppErrorCode>,
 ): ErrorResult {
   return {
+    isError: true,
     content: [
       {
         type: 'text',
@@ -113,11 +115,7 @@ export class ApplicationRuntime<
   public async executeTool(
     name: string,
     rawInput: Record<string, unknown>,
-  ): Promise<{
-    content: { type: 'text'; text: string }[];
-    structuredContent?: Record<string, unknown>;
-    isError?: boolean;
-  }> {
+  ): Promise<SuccessResult | ErrorResult> {
     const requestId = createRequestId();
     const startedAt = performance.now();
 
@@ -147,10 +145,7 @@ export class ApplicationRuntime<
         durationMs,
       });
 
-      return {
-        content: result.content,
-        structuredContent: result.structuredContent,
-      };
+      return result;
     } catch (error) {
       const appError = ensureAppError<BaseAppErrorCode>(error);
       const durationMs = Math.round(performance.now() - startedAt);
@@ -169,14 +164,7 @@ export class ApplicationRuntime<
         errorCode: result.error.code,
       });
 
-      return {
-        content: result.content,
-        isError: true,
-        structuredContent: {
-          code: result.error.code,
-          message: result.error.message,
-        },
-      };
+      return result;
     }
   }
 

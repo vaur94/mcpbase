@@ -9,6 +9,7 @@ import type { BaseRuntimeConfig } from '../../src/contracts/runtime-config.js';
 import type { BaseToolExecutionContext } from '../../src/core/execution-context.js';
 import type { ToolDefinition } from '../../src/contracts/tool-contract.js';
 import { createTextContent } from '../../src/core/result.js';
+import { isErrorResult } from '../../src/index.js';
 import { createInMemoryTelemetry, type TelemetryRecorder } from '../../src/telemetry/telemetry.js';
 import { createBaseFixtureConfig, createFixtureConfig } from '../fixtures/runtime-config.js';
 
@@ -68,7 +69,11 @@ describe('ApplicationRuntime normalization', () => {
       mode: 'uppercase',
     });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
+    expect(isErrorResult(result)).toBe(false);
+    if (isErrorResult(result)) {
+      throw new Error('Basarili sonuc bekleniyordu.');
+    }
     expect(result.content[0]?.type).toBe('text');
     expect(result.content[0]?.text).toBe('HELLO');
     expect(result.structuredContent).toEqual({
@@ -87,7 +92,11 @@ describe('ApplicationRuntime normalization', () => {
     const result = await runtime.executeTool('nonexistent_tool', {});
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent).toMatchObject({ code: 'TOOL_NOT_FOUND' });
+    expect(isErrorResult(result)).toBe(true);
+    if (!isErrorResult(result)) {
+      throw new Error('Hata sonucu bekleniyordu.');
+    }
+    expect(result.error).toMatchObject({ code: 'TOOL_NOT_FOUND' });
   });
 
   it('gecersiz giris icin dogrulama hatasi dondurur', async () => {
@@ -103,7 +112,10 @@ describe('ApplicationRuntime normalization', () => {
     });
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent).toMatchObject({ code: 'TOOL_EXECUTION_ERROR' });
+    if (!isErrorResult(result)) {
+      throw new Error('Hata sonucu bekleniyordu.');
+    }
+    expect(result.error).toMatchObject({ code: 'TOOL_EXECUTION_ERROR' });
   });
 });
 
@@ -235,7 +247,7 @@ describe('ApplicationRuntime guvenlik assertion icermez', () => {
       mode: 'uppercase',
     });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('HELLO');
   });
 });
@@ -331,7 +343,7 @@ describe('ApplicationRuntime telemetri entegrasyonu', () => {
     });
 
     const result = await runtime.executeTool('text_transform', { text: 'Hi', mode: 'uppercase' });
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('HI');
   });
 
@@ -383,7 +395,7 @@ describe('ApplicationRuntime telemetri entegrasyonu', () => {
 
     const result = await runtime.executeTool('text_transform', { text: 'Hi', mode: 'uppercase' });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('HI');
     expect(warnSpy).toHaveBeenCalledWith(
       'Telemetry recording failed.',
@@ -420,7 +432,10 @@ describe('ApplicationRuntime telemetri entegrasyonu', () => {
     const result = await runtime.executeTool('nonexistent_tool', {});
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent).toMatchObject({ code: 'TOOL_NOT_FOUND' });
+    if (!isErrorResult(result)) {
+      throw new Error('Hata sonucu bekleniyordu.');
+    }
+    expect(result.error).toMatchObject({ code: 'TOOL_NOT_FOUND' });
     expect(warnSpy).toHaveBeenCalledWith(
       'Telemetry recording failed.',
       expect.objectContaining({ toolName: 'nonexistent_tool' }),

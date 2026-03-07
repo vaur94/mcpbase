@@ -11,6 +11,7 @@ import type { ToolDefinition } from '../../contracts/tool-contract.js';
 
 import { registerResources, registerResourceTemplates } from '../../capabilities/resources.js';
 import { registerPrompts, registerPromptTemplates } from '../../capabilities/prompts.js';
+import { isErrorResult } from '../../core/result.js';
 
 export interface McpServerOptions {
   resources?: ResourceDefinition[];
@@ -30,7 +31,20 @@ function registerTool(server: McpServer, runtime: ApplicationRuntime, tool: Tool
     ...(tool.outputSchema ? { outputSchema: tool.outputSchema } : {}),
   };
 
-  server.registerTool(tool.name, metadata, async (input) => runtime.executeTool(tool.name, input));
+  server.registerTool(tool.name, metadata, async (input) => {
+    const result = await runtime.executeTool(tool.name, input);
+
+    if (isErrorResult(result)) {
+      return { content: result.content, isError: true };
+    }
+
+    return {
+      content: result.content,
+      ...(result.structuredContent !== undefined
+        ? { structuredContent: result.structuredContent }
+        : {}),
+    };
+  });
 }
 
 function buildCapabilities(options?: McpServerOptions): Record<string, object> {
