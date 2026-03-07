@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/vaur94/mcpbase/compare/v1.0.0...v1.0.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* generated changelog icin prettier kontrolunu atla ([34c6e77](https://github.com/vaur94/mcpbase/commit/34c6e774c9b41f37d24384ced47f7f5c8c053dd3))
+
 # 1.0.0 (2026-03-07)
 
 

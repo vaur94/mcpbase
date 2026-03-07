@@ -1,6 +1,6 @@
 {
   "name": "mcpbase",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Stdio-first reference repository for future MCP servers.",
   "type": "module",
   "main": "./dist/index.js",
