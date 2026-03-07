@@ -1,7 +1,9 @@
-import type { RuntimeConfig } from '../contracts/runtime-config.js';
+import type { BaseRuntimeConfig, RuntimeConfig } from '../contracts/runtime-config.js';
 
-export interface ToolExecutionContext {
+export interface BaseToolExecutionContext<TConfig extends BaseRuntimeConfig = BaseRuntimeConfig> {
   readonly requestId: string;
   readonly toolName: string;
-  readonly config: RuntimeConfig;
+  readonly config: TConfig;
 }
+
+export type ToolExecutionContext = BaseToolExecutionContext<RuntimeConfig>;
