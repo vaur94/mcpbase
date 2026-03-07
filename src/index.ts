@@ -122,6 +122,8 @@ export { createSamplingHelper } from './capabilities/sampling.js';
 export type { Root, RootsChangeHandler, RootsHandler } from './capabilities/roots.js';
 export { createRootsHandler } from './capabilities/roots.js';
 
+export type { McpServerOptions } from './transport/mcp/server.js';
+export { createMcpServer, startStdioServer } from './transport/mcp/server.js';
 export type { StreamableHttpOptions } from './transport/mcp/streamable-http.js';
 export { startStreamableHttpServer } from './transport/mcp/streamable-http.js';
 export type {
