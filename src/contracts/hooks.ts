@@ -1,4 +1,5 @@
 import type { AppError } from '../core/app-error.js';
+import type { BaseRuntimeConfig } from '../contracts/runtime-config.js';
 import type { BaseToolExecutionContext } from '../core/execution-context.js';
 import type {
   ToolDefinition,
@@ -27,4 +28,9 @@ export interface ExecutionHooks<
     error: AppError,
     context: TContext,
   ): Promise<void> | void;
+}
+
+export interface LifecycleHooks<TConfig extends BaseRuntimeConfig = BaseRuntimeConfig> {
+  onStart?(config: TConfig): Promise<void> | void;
+  onShutdown?(): Promise<void> | void;
 }

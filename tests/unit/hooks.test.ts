@@ -8,7 +8,9 @@ import type { BaseToolExecutionContext } from '../../src/core/execution-context.
 import { AppError } from '../../src/core/app-error.js';
 import { createTextContent } from '../../src/core/result.js';
 import { StderrLogger } from '../../src/logging/stderr-logger.js';
+import type { BaseRuntimeConfig } from '../../src/contracts/runtime-config.js';
 import { createBaseFixtureConfig } from '../fixtures/runtime-config.js';
+import type { LifecycleHooks } from '../../src/index.js';
 
 function createTestLogger() {
   return new StderrLogger({ level: 'error', includeTimestamp: false });
@@ -177,7 +179,7 @@ describe('ExecutionHooks afterExecute', () => {
 
     const result = await runtime.executeTool('test_tool', { value: 'test' });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('ok');
     expect(warnSpy).toHaveBeenCalledTimes(1);
   });
@@ -383,7 +385,7 @@ describe('ExecutionHooks hook olmadan calisma', () => {
 
     const result = await runtime.executeTool('test_tool', { value: 'test' });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('ok');
   });
 });
@@ -425,5 +427,65 @@ describe('ExecutionHooks async hooklar', () => {
     await runtime.executeTool('test_tool', { value: 'test' });
 
     expect(hookSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+type CustomRuntimeConfig = BaseRuntimeConfig<{ serviceName: string }>;
+
+describe('LifecycleHooks tipi', () => {
+  it('onStart ve onShutdown opsiyonel olarak kullanilir', async () => {
+    const hooks: LifecycleHooks<CustomRuntimeConfig> = {};
+
+    expect(hooks.onStart).toBeUndefined();
+    expect(hooks.onShutdown).toBeUndefined();
+
+    await hooks.onStart?.({
+      server: { name: 'mcpbase', version: '1.0.0' },
+      logging: { level: 'info', includeTimestamp: true },
+      serviceName: 'ornek-servis',
+    });
+    await hooks.onShutdown?.();
+  });
+
+  it('LifecycleHooks<CustomConfig> sync ve async callbacklari kabul eder', async () => {
+    const events: string[] = [];
+    const config: CustomRuntimeConfig = {
+      server: { name: 'mcpbase', version: '1.0.0' },
+      logging: { level: 'warn', includeTimestamp: false },
+      serviceName: 'ornek-servis',
+    };
+
+    const hooks: LifecycleHooks<CustomRuntimeConfig> = {
+      onStart: (hookConfig) => {
+        events.push(`sync:${hookConfig.serviceName}`);
+      },
+      onShutdown: async () => {
+        await Promise.resolve();
+        events.push('asyncShutdown');
+      },
+    };
+
+    await hooks.onStart?.(config);
+    await hooks.onShutdown?.();
+
+    const asyncHooks: LifecycleHooks<CustomRuntimeConfig> = {
+      onStart: async (hookConfig) => {
+        await Promise.resolve();
+        events.push(`async:${hookConfig.serviceName}`);
+      },
+      onShutdown: () => {
+        events.push('syncShutdown');
+      },
+    };
+
+    await asyncHooks.onStart?.(config);
+    await asyncHooks.onShutdown?.();
+
+    expect(events).toEqual([
+      'sync:ornek-servis',
+      'asyncShutdown',
+      'async:ornek-servis',
+      'syncShutdown',
+    ]);
   });
 });
