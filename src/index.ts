@@ -124,6 +124,12 @@ export { createRootsHandler } from './capabilities/roots.js';
 
 export type { StreamableHttpOptions } from './transport/mcp/streamable-http.js';
 export { startStreamableHttpServer } from './transport/mcp/streamable-http.js';
+export type {
+  TransportConfig,
+  TransportResult,
+  TransportType,
+} from './transport/transport-factory.js';
+export { createTransport } from './transport/transport-factory.js';
 
 export async function bootstrap<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
