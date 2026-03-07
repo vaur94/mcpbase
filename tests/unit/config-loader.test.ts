@@ -3,8 +3,13 @@ import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { loadConfig } from '../../src/config/load-config.js';
+import {
+  createRuntimeConfigSchema,
+  runtimeConfigSchema,
+} from '../../src/contracts/runtime-config.js';
 
 const trackedEnv = [
   'MCPBASE_CONFIG',
@@ -16,6 +21,11 @@ const trackedEnv = [
   'MCPBASE_TEXT_TRANSFORM_TOOL_ENABLED',
   'MCPBASE_ALLOWED_COMMANDS',
   'MCPBASE_ALLOWED_PATHS',
+  'MYAPP_CONFIG',
+  'MYAPP_SERVER_NAME',
+  'MYAPP_SERVER_VERSION',
+  'MYAPP_LOG_LEVEL',
+  'MYAPP_LOGGING_TIMESTAMP',
 ] as const;
 
 const envSnapshot = Object.fromEntries(trackedEnv.map((key) => [key, process.env[key]]));
@@ -51,15 +61,17 @@ describe('loadConfig', () => {
     process.env.MCPBASE_LOG_LEVEL = 'error';
     process.env.MCPBASE_ALLOWED_COMMANDS = 'npm,node';
 
-    const result = await loadConfig([
-      '--config',
-      configPath,
-      '--server-name',
-      'cli-server',
-      '--log-level',
-      'debug',
-      '--allow-command=pnpm',
-    ]);
+    const result = await loadConfig(runtimeConfigSchema, {
+      argv: [
+        '--config',
+        configPath,
+        '--server-name',
+        'cli-server',
+        '--log-level',
+        'debug',
+        '--allow-command=pnpm',
+      ],
+    });
 
     expect(result.server.name).toBe('cli-server');
     expect(result.logging.level).toBe('debug');
@@ -68,8 +80,44 @@ describe('loadConfig', () => {
   });
 
   it('throws when the config file does not exist', async () => {
-    await expect(loadConfig(['--config', '/missing/file.json'])).rejects.toThrow(
-      /Configuration file not found/u,
+    await expect(
+      loadConfig(runtimeConfigSchema, { argv: ['--config', '/missing/file.json'] }),
+    ).rejects.toThrow(/Configuration file not found/u);
+  });
+
+  it('ozel sema ve env on eki ile config yukler', async () => {
+    const storageSchema = z.object({
+      storage: z.object({
+        bucket: z.string().min(1),
+      }),
+    });
+    const schema = createRuntimeConfigSchema(storageSchema);
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'mcpbase-config-'));
+    const configPath = path.join(tempDir, 'myapp.config.json');
+
+    await writeFile(
+      configPath,
+      JSON.stringify({
+        server: { name: 'dosya-sunucusu' },
+        logging: { level: 'warn' },
+        storage: { bucket: 'arsiv' },
+      }),
+      'utf8',
     );
+
+    process.env.MYAPP_SERVER_NAME = 'ortam-sunucusu';
+    process.env.MYAPP_LOG_LEVEL = 'error';
+
+    const result = await loadConfig(schema, {
+      envPrefix: 'MYAPP_',
+      defaultConfigFile: configPath,
+      argv: ['--server-name', 'cli-sunucusu', '--log-level', 'debug'],
+    });
+
+    expect(result.server.name).toBe('cli-sunucusu');
+    expect(result.logging.level).toBe('debug');
+    expect(result.logging.includeTimestamp).toBe(true);
+    expect(result.server.version).toBe('0.1.0');
+    expect(result.storage.bucket).toBe('arsiv');
   });
 });
