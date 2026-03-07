@@ -135,6 +135,7 @@ src/
 When building a new MCP server on top of mcpbase, here's what to update:
 
 ### 1. `package.json`
+
 ```json
 {
   "name": "@yourscope/your-mcp-server",
@@ -144,6 +145,7 @@ When building a new MCP server on top of mcpbase, here's what to update:
 ```
 
 ### 2. Server identity (in your config or bootstrap)
+
 ```typescript
 // mcpbase.config.json
 {
@@ -155,6 +157,7 @@ When building a new MCP server on top of mcpbase, here's what to update:
 ```
 
 ### 3. Extend the config schema
+
 ```typescript
 import { createRuntimeConfigSchema } from '@vaur94/mcpbase';
 import { z } from 'zod';
@@ -169,6 +172,7 @@ export const myConfigSchema = createRuntimeConfigSchema(
 ```
 
 ### 4. Extend the error codes
+
 ```typescript
 import type { BaseAppErrorCode } from '@vaur94/mcpbase';
 
@@ -176,6 +180,7 @@ export type MyErrorCode = BaseAppErrorCode | 'STORAGE_ERROR' | 'QUOTA_EXCEEDED';
 ```
 
 ### 5. Extend the execution context
+
 ```typescript
 import type { BaseToolExecutionContext } from '@vaur94/mcpbase';
 import type { MyConfig } from './config.js';
@@ -186,6 +191,7 @@ export interface MyContext extends BaseToolExecutionContext<MyConfig> {
 ```
 
 ### 6. Wire it all together
+
 ```typescript
 import { bootstrap } from '@vaur94/mcpbase';
 import { myConfigSchema } from './config.js';
@@ -204,12 +210,17 @@ await bootstrap<MyConfig, MyContext>({
 ```
 
 ### 7. Subpath imports
+
 ```typescript
 // Example tools (for reference / testing)
 import { createExampleTools } from '@vaur94/mcpbase/examples';
 
 // Security guards + PERMISSION_DENIED error code
-import { assertFeatureEnabled, assertAllowedPath, PERMISSION_DENIED } from '@vaur94/mcpbase/security';
+import {
+  assertFeatureEnabled,
+  assertAllowedPath,
+  PERMISSION_DENIED,
+} from '@vaur94/mcpbase/security';
 ```
 
 ---

@@ -135,6 +135,7 @@ src/
 mcpbase üzerine yeni bir MCP sunucusu geliştirirken şunları güncelle:
 
 ### 1. `package.json`
+
 ```json
 {
   "name": "@kapsamın/mcp-sunucun",
@@ -144,6 +145,7 @@ mcpbase üzerine yeni bir MCP sunucusu geliştirirken şunları güncelle:
 ```
 
 ### 2. Sunucu kimliği (config veya bootstrap içinde)
+
 ```typescript
 // mcpbase.config.json
 {
@@ -155,6 +157,7 @@ mcpbase üzerine yeni bir MCP sunucusu geliştirirken şunları güncelle:
 ```
 
 ### 3. Config şemasını genişlet
+
 ```typescript
 import { createRuntimeConfigSchema } from '@vaur94/mcpbase';
 import { z } from 'zod';
@@ -169,6 +172,7 @@ export const benimConfigSchema = createRuntimeConfigSchema(
 ```
 
 ### 4. Hata kodlarını genişlet
+
 ```typescript
 import type { BaseAppErrorCode } from '@vaur94/mcpbase';
 
@@ -176,6 +180,7 @@ export type BenimHataKodum = BaseAppErrorCode | 'DEPOLAMA_HATASI' | 'KOTA_ASILDI
 ```
 
 ### 5. Execution context'i genişlet
+
 ```typescript
 import type { BaseToolExecutionContext } from '@vaur94/mcpbase';
 import type { BenimConfigum } from './config.js';
@@ -186,6 +191,7 @@ export interface BenimContextim extends BaseToolExecutionContext<BenimConfigum> 
 ```
 
 ### 6. Hepsini birleştir
+
 ```typescript
 import { bootstrap } from '@vaur94/mcpbase';
 import { benimConfigSchema } from './config.js';
@@ -204,12 +210,17 @@ await bootstrap<BenimConfigum, BenimContextim>({
 ```
 
 ### 7. Subpath import'lar
+
 ```typescript
 // Örnek araçlar (referans / test için)
 import { createExampleTools } from '@vaur94/mcpbase/examples';
 
 // Güvenlik guard'ları + PERMISSION_DENIED hata kodu
-import { assertFeatureEnabled, assertAllowedPath, PERMISSION_DENIED } from '@vaur94/mcpbase/security';
+import {
+  assertFeatureEnabled,
+  assertAllowedPath,
+  PERMISSION_DENIED,
+} from '@vaur94/mcpbase/security';
 ```
 
 ---
