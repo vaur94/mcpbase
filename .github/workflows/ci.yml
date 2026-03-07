@@ -51,18 +51,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure npm authentication
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          cat > "$RUNNER_TEMP/.npmrc" <<EOF
-          registry=https://registry.npmjs.org
-          //registry.npmjs.org/:_authToken=${NPM_TOKEN}
-          EOF
-          echo "NPM_CONFIG_USERCONFIG=$RUNNER_TEMP/.npmrc" >> "$GITHUB_ENV"
-
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm run release
