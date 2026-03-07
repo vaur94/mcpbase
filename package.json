@@ -1,6 +1,6 @@
 {
   "name": "@vaur94/mcpbase",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Stdio-first reference repository for future MCP servers.",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,16 +15,23 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./examples": {
+      "types": "./dist/examples/index.d.ts",
+      "import": "./dist/examples/index.js",
+      "default": "./dist/examples/index.js"
+    },
+    "./security": {
+      "types": "./dist/security/index.d.ts",
+      "import": "./dist/security/index.js",
+      "default": "./dist/security/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
-    "bin",
-    "examples",
     "README.md",
-    "README.tr.md",
-    "README.en.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "engines": {
     "node": ">=22.14.0",
@@ -74,6 +81,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "zod": "^4.1.12"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": ">=1.27.1",
+    "zod": ">=3.23.0 || >=4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
