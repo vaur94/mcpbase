@@ -209,6 +209,7 @@ describe('createSamplingHelper', () => {
 
     expect(mockServer.server.createMessage).toHaveBeenCalledWith({
       messages: [],
+      maxTokens: 1024,
     });
   });
 });

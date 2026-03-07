@@ -48,6 +48,14 @@
 
 - MCP logging bridge can stay as a thin capability wrapper: keep its own RFC 5424 severity table and forward with `server.server.sendLoggingMessage(...)`
 - `McpServer` logging send API is async, but a bridge with `void` logger surface can safely fire-and-forget via `void server.server.sendLoggingMessage(...)`
+
+## Task 16 Learnings (Roots Handler)
+
+- `server.server.listRoots()` returns `{ roots: { uri: string, name?: string }[] }` 
+- Use `RootsListChangedNotificationSchema` from `@modelcontextprotocol/sdk/types.js` for notification handler
+- `setNotificationHandler(schema, callback)` registers notification handlers
+- Single notification handler can dispatch to multiple registered callbacks (design pattern)
+- Roots are lightweight — no caching or complex state needed
 - Logging bridge tests should mock `sendLoggingMessage()` with a resolved promise, because the SDK method is async and rejection handling is part of the bridge contract
 - MCP prompt registration callbacks in the SDK must accept the extra handler context parameter even when unused, otherwise `server.prompt(...)` overload resolution fails under `tsc`
 
