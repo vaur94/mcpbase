@@ -1,0 +1,36 @@
+# Task 5: Generic ToolRegistry<TContext> - Evidence
+
+## Date: 2026-03-07
+
+## Changes Made
+
+### File: src/application/tool-registry.ts
+- Added generic parameter `TContext extends BaseToolExecutionContext = BaseToolExecutionContext`
+- Updated internal Map to use `ToolDefinition<any, any, TContext>`
+- Updated `register()` to accept `ToolDefinition<any, any, any>` (practical solution for contravariance)
+- Updated `get()` return type to `ToolDefinition<any, any, TContext>`
+- Updated `list()` return type to `ToolDefinition<any, any, TContext>[]`
+
+### File: tests/unit/tool-registry.test.ts
+- Added 3 new tests for generic functionality:
+  - "ToolRegistry<TContext> doğru tipli tool kaydeder"
+  - "get() doğru TContext ile döner"
+  - "varsayılan TContext ile çalışır (geriye uyumluluk)"
+- Kept existing 3 tests passing (backward compatibility)
+
+## Verification Results
+
+### Tests: npx vitest run tests/unit/tool-registry.test.ts
+```
+ ✓ tests/unit/tool-registry.test.ts (6 tests) 12ms
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+```
+
+### TypeScript: npx tsc --noEmit
+- Zero errors
+- All types compile correctly
+
+## Commit
+- Message: `refactor(registry): make ToolRegistry generic with TContext parameter`
+- Files committed: `src/application/tool-registry.ts`, `tests/unit/tool-registry.test.ts`

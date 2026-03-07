@@ -1,0 +1,26 @@
+Config Factory Evidence — Task 1
+=================================
+
+Exports verified from src/contracts/runtime-config.ts:
+- logLevelSchema: z.enum(['debug', 'info', 'warn', 'error'])
+- baseServerSchema: z.object({ name, version })
+- baseLoggingSchema: z.object({ level, includeTimestamp })
+- baseRuntimeConfigSchema: z.object({ server, logging }) — NO security
+- createRuntimeConfigSchema(extensionSchema): merges base + extension via .extend()
+- createPartialRuntimeConfigSchema(extensionSchema): deep-partial factory
+- BaseRuntimeConfig<TExtras = unknown>: generic type via z.infer & TExtras
+- runtimeConfigSchema: backward-compat (base + security via factory)
+- partialRuntimeConfigSchema: backward-compat (manually typed for type inference)
+- RuntimeConfig, PartialRuntimeConfig: backward-compat types
+
+Test results: 27 tests ALL PASS
+TypeScript: npx tsc --noEmit → zero errors
+All existing tests: 50 tests ALL PASS (no regression)
+
+Key decisions:
+- BaseRuntimeConfig<TExtras = unknown> instead of Record<string, never> 
+  (Record<string, never> creates impossible intersection with base properties)
+- partialRuntimeConfigSchema manually typed for backward compat with cli-args.ts
+  (dynamic schema construction via createPartialRuntimeConfigSchema loses z.infer type info)
+- deepPartialShape() recursive helper for createPartialRuntimeConfigSchema factory
+  (Zod v4 removed .deepPartial(), manual recursion needed)

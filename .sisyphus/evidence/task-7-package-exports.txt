@@ -1,0 +1,59 @@
+
+> @vaur94/mcpbase@2.0.0 prepack
+> npm run build
+
+npm warn Unknown env config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown global config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> @vaur94/mcpbase@2.0.0 build
+> tsup
+
+CLI Building entry: src/index.ts, src/examples/index.ts, src/security/index.ts
+CLI Using tsconfig: tsconfig.json
+CLI tsup v8.5.1
+CLI Using tsup config: /home/ugur/Projects/local-mcp/mcpbase/tsup.config.ts
+CLI Target: node20
+CLI Cleaning output folder
+ESM Build start
+ESM dist/examples/index.js     53.00 B
+ESM dist/index.js              19.82 KB
+ESM dist/security/index.js     53.00 B
+ESM dist/examples/index.js.map 71.00 B
+ESM dist/security/index.js.map 71.00 B
+ESM dist/index.js.map          43.67 KB
+ESM ⚡️ Build success in 20ms
+DTS Build start
+DTS ⚡️ Build success in 2767ms
+DTS dist/examples/index.d.ts 13.00 B
+DTS dist/index.d.ts          10.42 KB
+DTS dist/security/index.d.ts 13.00 B
+npm notice
+npm notice 📦  @vaur94/mcpbase@2.0.0
+npm notice Tarball Contents
+npm notice 2.3kB CHANGELOG.md
+npm notice 1.1kB LICENSE
+npm notice 1.7kB README.en.md
+npm notice 2.2kB README.md
+npm notice 2.0kB README.tr.md
+npm notice 355B bin/cli.js
+npm notice 13B dist/examples/index.d.ts
+npm notice 53B dist/examples/index.js
+npm notice 71B dist/examples/index.js.map
+npm notice 10.7kB dist/index.d.ts
+npm notice 20.3kB dist/index.js
+npm notice 44.7kB dist/index.js.map
+npm notice 13B dist/security/index.d.ts
+npm notice 53B dist/security/index.js
+npm notice 71B dist/security/index.js.map
+npm notice 3.0kB package.json
+npm notice Tarball Details
+npm notice name: @vaur94/mcpbase
+npm notice version: 2.0.0
+npm notice filename: vaur94-mcpbase-2.0.0.tgz
+npm notice package size: 22.3 kB
+npm notice unpacked size: 88.6 kB
+npm notice shasum: 58a130016c9efe7f77e825eaa65b87253f2c36c1
+npm notice integrity: sha512-cuGLx8/96R89G[...]f06+zSuaHqOag==
+npm notice total files: 16
+npm notice
+vaur94-mcpbase-2.0.0.tgz

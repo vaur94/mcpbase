@@ -1,0 +1,36 @@
+
+ RUN  v3.2.4 /home/ugur/Projects/local-mcp/mcpbase
+
+ ✓ tests/unit/runtime-config.test.ts > logLevelSchema > tüm geçerli log seviyelerini kabul eder 2ms
+ ✓ tests/unit/runtime-config.test.ts > logLevelSchema > geçersiz log seviyesini reddeder 1ms
+ ✓ tests/unit/runtime-config.test.ts > baseServerSchema > geçerli server yapılandırmasını doğrular 2ms
+ ✓ tests/unit/runtime-config.test.ts > baseServerSchema > boş name alanında hata verir 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseServerSchema > boş version alanında hata verir 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseLoggingSchema > geçerli logging yapılandırmasını doğrular 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseLoggingSchema > geçersiz log seviyesinde hata verir 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseRuntimeConfigSchema > yalnızca server ve logging alanlarını doğrular 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseRuntimeConfigSchema > security alanı olmadan doğrulama başarılı olur 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseRuntimeConfigSchema > eksik server alanında hata verir 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseRuntimeConfigSchema > eksik logging alanında hata verir 0ms
+ ✓ tests/unit/runtime-config.test.ts > baseRuntimeConfigSchema > security alanı içeren veriyi yine de kabul eder (strip edilir) 0ms
+ ✓ tests/unit/runtime-config.test.ts > createRuntimeConfigSchema > base schema ile extension schema birleştirir 1ms
+ ✓ tests/unit/runtime-config.test.ts > createRuntimeConfigSchema > extension alanı eksik olduğunda hata verir 1ms
+ ✓ tests/unit/runtime-config.test.ts > createRuntimeConfigSchema > birden fazla extension alanı ile çalışır 1ms
+ ✓ tests/unit/runtime-config.test.ts > createRuntimeConfigSchema > base alanları yanlışsa extension doğru olsa bile hata verir 1ms
+ ✓ tests/unit/runtime-config.test.ts > createPartialRuntimeConfigSchema > boş obje kabul eder 1ms
+ ✓ tests/unit/runtime-config.test.ts > createPartialRuntimeConfigSchema > kısmi server verisi kabul eder 2ms
+ ✓ tests/unit/runtime-config.test.ts > createPartialRuntimeConfigSchema > iç içe kısmi extension verisi kabul eder 1ms
+ ✓ tests/unit/runtime-config.test.ts > createPartialRuntimeConfigSchema > yalnızca extension verisi kabul eder 1ms
+ ✓ tests/unit/runtime-config.test.ts > geriye uyumluluk > runtimeConfigSchema security dahil doğrular 1ms
+ ✓ tests/unit/runtime-config.test.ts > geriye uyumluluk > runtimeConfigSchema security eksikse hata verir 0ms
+ ✓ tests/unit/runtime-config.test.ts > geriye uyumluluk > partialRuntimeConfigSchema kısmi security kabul eder 1ms
+ ✓ tests/unit/runtime-config.test.ts > geriye uyumluluk > partialRuntimeConfigSchema boş obje kabul eder 0ms
+ ✓ tests/unit/runtime-config.test.ts > BaseRuntimeConfig tipi > varsayılan tip parametresi ile derlenir 0ms
+ ✓ tests/unit/runtime-config.test.ts > BaseRuntimeConfig tipi > extension tipi ile derlenir 0ms
+ ✓ tests/unit/runtime-config.test.ts > BaseRuntimeConfig tipi > RuntimeConfig tipi geriye uyumlu kalır 0ms
+
+ Test Files  1 passed (1)
+      Tests  27 passed (27)
+   Start at  13:40:50
+   Duration  575ms (transform 70ms, setup 0ms, collect 80ms, tests 22ms, environment 0ms, prepare 99ms)
+

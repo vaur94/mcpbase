@@ -106,6 +106,16 @@ export type { ExecutionHooks } from './contracts/hooks.js';
 export type { ResourceDefinition, ResourceTemplateDefinition } from './capabilities/resources.js';
 export { registerResources, registerResourceTemplates } from './capabilities/resources.js';
 
+export type {
+  PromptDefinition,
+  PromptMessage,
+  PromptTemplateDefinition,
+} from './capabilities/prompts.js';
+export { registerPrompts, registerPromptTemplates } from './capabilities/prompts.js';
+
+export type { McpLogLevel, McpLoggingBridge } from './capabilities/logging.js';
+export { createMcpLoggingBridge } from './capabilities/logging.js';
+
 export async function bootstrap<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
   TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,

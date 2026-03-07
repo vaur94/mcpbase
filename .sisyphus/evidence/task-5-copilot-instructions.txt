@@ -1,0 +1,19 @@
+TASK 5: Copilot Instructions - Evidence
+========================================
+
+File created: .github/copilot-instructions.md
+
+KEY TERMS VERIFIED (present in file):
+- "as any" forbidden: Line 7 - "Never use `as any`, `@ts-ignore`, or `@ts-expect-error`"
+- Turkish conventions: Lines 19-23 - "Turkish-First Convention", "All user-facing text...must be in Turkish", "Test names must be written in Turkish"
+- Zod: Lines 25-28 - "Zod Validation", "Use Zod for all input and output validation"
+- stderr logging: Line 39 - "NEVER write to stdout — all output must go through stderr via StderrLogger"
+- ESM imports: Lines 11-18 - "ESM Modules Only", "Import paths must include .js extension", "Use import type for type-only imports"
+- Vitest: Lines 31-34 - "Testing with Vitest", "Use Vitest for all tests (NOT Jest or Mocha)"
+
+NEGATIVE CHECKS (NOT present as positive mentions):
+- CommonJS/require: NOT mentioned positively - mentioned only as "Never use CommonJS require()"
+- Jest/Mocha: NOT mentioned positively - mentioned only as "NOT Jest or Mocha"
+- English-only mandate: NOT mentioned at all
+
+All requirements met.

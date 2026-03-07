@@ -1,0 +1,6 @@
+mcp
+mcp-server
+model-context-protocol
+reference-architecture
+stdio
+typescript

@@ -1,0 +1,14 @@
+=== Task 2: No Forbidden Fields ===
+
+Verified at: 2026-03-07
+
+Forbidden fields that MUST NOT be added:
+  - publishConfig.registry: MUST NOT be added
+  - publishConfig.provenance: MUST NOT be added
+  - registry-url: MUST NOT be added anywhere
+
+Verification:
+  publishConfig keys: ["access"]
+  publishConfig value: {"access":"public"}
+
+Result: PASS - Only "access" key exists, no forbidden fields added.

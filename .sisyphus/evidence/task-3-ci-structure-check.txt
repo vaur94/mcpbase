@@ -1,0 +1,39 @@
+Task 3 - CI structure check
+
+File: .github/workflows/ci.yml
+
+Observed diff:
+@@ -51,18 +51,7 @@ jobs:
+       - name: Install dependencies
+         run: npm ci
+
+-      - name: Configure npm authentication
+-        env:
+-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+-        run: |
+-          cat > "$RUNNER_TEMP/.npmrc" <<EOF
+-          registry=https://registry.npmjs.org
+-          //registry.npmjs.org/:_authToken=${NPM_TOKEN}
+-          EOF
+-          echo "NPM_CONFIG_USERCONFIG=$RUNNER_TEMP/.npmrc" >> "$GITHUB_ENV"
+-
+       - name: Run semantic-release
+         env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+         run: npm run release
+
+Required elements still present:
+- line 38: id-token: write
+- line 43: fetch-depth: 0
+
+Forbidden patterns check:
+- NPM_TOKEN: no matches
+- .npmrc: no matches
+- registry-url: no matches
+
+Conclusion:
+- Configure npm authentication step removed completely
+- Run semantic-release keeps only GITHUB_TOKEN in env
+- Release job if condition unchanged
+- No new environment variables added

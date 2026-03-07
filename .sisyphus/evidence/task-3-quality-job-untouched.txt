@@ -1,0 +1,27 @@
+Task 3 - Quality job untouched proof
+
+Verified that lines 10-27 remain unchanged after the edit.
+
+Current lines 10-27 from .github/workflows/ci.yml:
+10:   quality:
+11:     name: Quality Gates
+12:     runs-on: ubuntu-latest
+13:     steps:
+14:       - name: Check out repository
+15:         uses: actions/checkout@v4
+16:
+17:       - name: Set up Node.js
+18:         uses: actions/setup-node@v4
+19:         with:
+20:           node-version: 22
+21:           cache: npm
+22:
+23:       - name: Install dependencies
+24:         run: npm ci
+25:
+26:       - name: Run quality gate
+27:         run: npm run ci:check
+
+Conclusion:
+- Quality job content matches the pre-edit snapshot
+- No changes were made in lines 10-27

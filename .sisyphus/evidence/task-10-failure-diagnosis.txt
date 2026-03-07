@@ -1,0 +1,37 @@
+## Task 10 — Release Pipeline Diagnosis
+
+### CI Run: 22789017933 (commit 563d3b8)
+
+### What's Working
+- @semantic-release/npm v13.1.5 is loaded (override worked)
+- OIDC context is being verified: "Verifying OIDC context for publishing from GitHub Actions"
+- GitHub authentication: SUCCESS
+- id-token: write permission: present
+
+### What's Failing
+Error: "OIDC token exchange with the npm registry failed: 404 OIDC token exchange error - package not found"
+
+### Root Cause
+The npm package `mcpbase` does NOT exist on npm registry (npm view mcpbase → 404).
+npm cannot find a Trusted Publisher configuration for this package name.
+
+### Required User Action
+1. Go to https://www.npmjs.com → log in as vaur94
+2. Navigate to: https://www.npmjs.com/package/mcpbase/access
+   (If package doesn't exist yet, go to profile → Packages → configure)
+3. Under "Trusted Publishers" → "Add a publisher":
+   - Owner: vaur94
+   - Repository: mcpbase
+   - Workflow filename: ci.yml
+   - Environment: (leave empty)
+4. Save
+
+### After User Action
+Re-run the CI workflow or push a new commit to trigger release.
+The OIDC exchange will succeed and mcpbase will be published to npm for the first time.
+
+### Alternative (if Trusted Publisher UI requires existing package)
+1. npm login locally: npm login
+2. npm publish --access public (from local, with npm account)
+3. Then configure Trusted Publisher on npmjs.com
+4. Subsequent releases will use OIDC automatically

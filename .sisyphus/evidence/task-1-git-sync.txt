@@ -1,0 +1,63 @@
+# Git Sync Evidence - Task 1
+
+## 1. Initial git status
+```
+Üzerinde bulunulan dal: main
+Dalınız 'origin/main' dalından 1 işleme geride ve ileri sarılabilir.
+  (yerel dalınızı güncellemek için "git pull" kullanın)
+
+İzlenmeyen dosyalar:
+  (işlenecekler arasına koymak için "git add" kullanın)
+	.sisyphus/
+
+işlemeye bir şey eklenmedi; ancak izlenmeyen dosyalar var
+  (izlemek için "git add" kullanın)
+```
+
+## 2. git pull origin main
+```
+Şu konumdan: https://github.com/vaur94/mcpbase
+ * branch            main       -> FETCH_HEAD
+Güncelleniyor: 34c6e77..aabcd11
+Fast-forward
+ CHANGELOG.md      | 7 +++++++
+ package-lock.json | 4 ++--
+ package.json      | 2 +-
+ 3 files changed, 10 insertions(+), 3 deletions(-)
+```
+
+## 3. git log --oneline -3 (after pull)
+```
+aabcd11 chore(release): 1.0.1 [skip ci]
+34c6e77 fix: generated changelog icin prettier kontrolunu atla
+a258765 chore(release): 1.0.0 [skip ci]
+```
+
+## 4. git rev-parse verification
+```
+aabcd119f12f01f8d894547d43534651a8300a81
+aabcd119f12f01f8d894547d43534651a8300a81
+```
+
+## 5. npm ci result
+```
+npm warn deprecated semver-diff@5.0.0: Deprecated as the semver package now supports this built-in.
+npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting me@izs.me
+
+added 599 packages, and audited 804 packages in 7s
+
+183 packages are looking for funding
+  run `npm fund` for details
+
+11 high severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+```
+
+## Verification Results
+- [x] git log --oneline -1 shows v1.0.1 release commit at HEAD
+- [x] git rev-parse HEAD == git rev-parse origin/main
+- [x] npm ci exits 0
