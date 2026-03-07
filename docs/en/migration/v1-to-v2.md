@@ -107,9 +107,9 @@ interface CustomConfig extends BaseRuntimeConfig<{ customField: string }> {
 }
 ```
 
-### 4. AppError: PERMISSION_DENIED Moved
+### 4. AppError: PERMISSION_DENIED Included in Base
 
-The `PERMISSION_DENIED` error code was removed from the base `AppErrorCode` type. It is now available as an extended code via the security module.
+The `PERMISSION_DENIED` error code is included in the base `AppErrorCode` type, as it is a common requirement for secure tool execution.
 
 **Before (v1):**
 
@@ -122,15 +122,36 @@ const error = new AppError<AppErrorCode>('PERMISSION_DENIED', 'Access denied');
 **After (v2):**
 
 ```typescript
-import { AppError, type BaseAppErrorCode } from '@vaur94/mcpbase';
-import type { AppErrorCode } from '@vaur94/mcpbase/security';
+import { AppError, type AppErrorCode } from '@vaur94/mcpbase';
 
-// Base codes only (no PERMISSION_DENIED)
-const baseError = new AppError<BaseAppErrorCode>('CONFIG_ERROR', 'Config invalid');
+// PERMISSION_DENIED remains available in AppErrorCode
+const error = new AppError<AppErrorCode>('PERMISSION_DENIED', 'Access denied');
+```
 
-// Extended codes via security subpath
-import { AppError as SecurityAppError } from '@vaur94/mcpbase/security';
-const securityError = new SecurityAppError('PERMISSION_DENIED', 'Access denied');
+### 4.1. SecureToolDefinition for Feature Flags
+
+Tool-level security metadata is now handled by `SecureToolDefinition`. The base `ToolDefinition` is lean and does not contain security fields.
+
+**Before (v1):**
+
+```typescript
+const tool: ToolDefinition = {
+  name: 'tool',
+  security: { requiredFeature: 'feature' },
+  // ...
+};
+```
+
+**After (v2):**
+
+```typescript
+import { type SecureToolDefinition } from '@vaur94/mcpbase/security';
+
+const tool: SecureToolDefinition = {
+  name: 'tool',
+  security: { requiredFeature: 'feature' },
+  // ...
+};
 ```
 
 ### 5. ApplicationRuntime Constructor: Positional to Options Object
@@ -365,14 +386,14 @@ import { createExampleTools } from '@vaur94/mcpbase/examples';
 
 ## Summary of API Changes
 
-| v1 (Old)                                        | v2 (New)                                                                                           |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `npm install fork-template`                     | `npm install @vaur94/mcpbase`                                                                      |
-| `RuntimeConfig`                                 | `BaseRuntimeConfig<TExtras>` or `RuntimeConfig`                                                    |
-| `AppErrorCode` includes `PERMISSION_DENIED`     | `BaseAppErrorCode` excludes `PERMISSION_DENIED`; use `@vaur94/mcpbase/security`                    |
-| `new ApplicationRuntime(config, logger, tools)` | `new ApplicationRuntime({ config, logger, tools, contextFactory?, hooks? })`                       |
-| `bootstrap(argv?)`                              | `bootstrap({ configSchema?, tools?, loggerFactory?, contextFactory?, hooks?, transport?, argv? })` |
-| `loadConfig(argv?)`                             | `loadConfig(schema?, { envPrefix?, defaultConfigFile?, argv? })`                                   |
-| Stdio only                                      | Stdio + Streamable HTTP                                                                            |
-| No capabilities                                 | Resources, Prompts, Logging, Sampling, Roots                                                       |
-| Bundled dependencies                            | Peer dependencies (`zod`, `@modelcontextprotocol/sdk`)                                             |
+| v1 (Old)                                        | v2 (New)                                                                                                       |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `npm install fork-template`                     | `npm install @vaur94/mcpbase`                                                                                  |
+| `RuntimeConfig`                                 | `BaseRuntimeConfig<TExtras>` or `RuntimeConfig`                                                                |
+| `AppErrorCode`                                  | `AppErrorCode` (includes `PERMISSION_DENIED`); `BaseAppErrorCode` (excludes it)                                |
+| `new ApplicationRuntime(config, logger, tools)` | `new ApplicationRuntime({ config, logger, tools, contextFactory?, hooks? })`                                   |
+| `bootstrap(argv?)`                              | `bootstrap({ configSchema?, tools?, loggerFactory?, contextFactory?, hooks?, lifecycle?, transport?, argv? })` |
+| `loadConfig(argv?)`                             | `loadConfig(schema?, { envPrefix?, defaultConfigFile?, argv?, defaults?, envMapper?, cliMapper? })`            |
+| Stdio only                                      | Stdio + Streamable HTTP                                                                                        |
+| No capabilities                                 | Resources, Prompts, Logging, Sampling, Roots                                                                   |
+| Bundled dependencies                            | Peer dependencies (`zod`, `@modelcontextprotocol/sdk`)                                                         |

@@ -58,7 +58,7 @@ await bootstrap({
 });
 ```
 
-### With custom config schema
+### With custom context and lifecycle hooks
 
 ```typescript
 import { bootstrap, createRuntimeConfigSchema } from '@vaur94/mcpbase';
@@ -73,11 +73,41 @@ const configSchema = createRuntimeConfigSchema(
 await bootstrap({
   configSchema,
   tools: myTools,
+  contextFactory: (toolName, requestId, config) => ({
+    requestId,
+    toolName,
+    config,
+    db: new Database(config.storage.path),
+  }),
+  lifecycle: {
+    onStart: async (config) => {
+      console.error('Server starting...');
+    },
+    onShutdown: async () => {
+      console.error('Server shutting down...');
+    },
+  },
   hooks: {
     beforeExecute: async (tool, input, ctx) => {
       console.error(`[${ctx.requestId}] → ${tool.name}`);
     },
   },
+});
+```
+
+### Advanced Config Loading
+
+```typescript
+import { loadConfig } from '@vaur94/mcpbase';
+
+const config = await loadConfig(myConfigSchema, {
+  defaults: { logging: { level: 'debug' } },
+  envMapper: (prefix) => ({
+    server: { name: process.env[`${prefix}CUSTOM_NAME`] },
+  }),
+  cliMapper: (args) => ({
+    // custom command line argument mapping
+  }),
 });
 ```
 
@@ -125,6 +155,13 @@ createServer(async (req, res) => {
   await startStreamableHttpServer(server, { req, res });
 }).listen(3000);
 ```
+
+### Utility Helpers
+
+- **Tool Management**: `ToolRegistry.has(name)` and `tryGet(name)` for safe tool lookup.
+- **Result Handling**: `isErrorResult(result)` type-guard to distinguish success from error payloads.
+- **Security**: `SecureToolDefinition` for feature-gated tools and `createSecurityEnforcementHook(config)` to automate permission checks.
+- **Guards**: `assertFeatureEnabled`, `assertAllowedPath`, and `assertAllowedCommand` for manual security validation.
 
 ---
 

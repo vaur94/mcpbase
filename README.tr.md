@@ -58,9 +58,9 @@ await bootstrap({
 });
 ```
 
-### Özel config şemasıyla
+### Özel context ve lifecycle hook'ları ile
 
-```typescript
+````typescript
 import { bootstrap, createRuntimeConfigSchema } from '@vaur94/mcpbase';
 import { z } from 'zod';
 
@@ -73,13 +73,44 @@ const configSchema = createRuntimeConfigSchema(
 await bootstrap({
   configSchema,
   tools: araçlarım,
+  contextFactory: (toolName, requestId, config) => ({
+    requestId,
+    toolName,
+    config,
+    db: new Veritabani(config.depolama.yol),
+  }),
+  lifecycle: {
+    onStart: async (config) => {
+      console.error('Sunucu başlıyor...');
+    },
+    onShutdown: async () => {
+      console.error('Sunucu kapanıyor...');
+    },
+  },
   hooks: {
     beforeExecute: async (tool, input, ctx) => {
       console.error(`[${ctx.requestId}] → ${tool.name}`);
     },
   },
 });
-```
+
+### Gelişmiş Yapılandırma Yükleme
+
+```typescript
+import { loadConfig } from '@vaur94/mcpbase';
+
+const config = await loadConfig(benimConfigSchema, {
+  defaults: { logging: { level: 'debug' } },
+  envMapper: (prefix) => ({
+    server: { name: process.env[`${prefix}OZEL_AD`] },
+  }),
+  cliMapper: (args) => ({
+    // özel komut satırı argüman eşlemesi
+  }),
+});
+````
+
+````
 
 ### Dahili telemetri ile
 
@@ -107,7 +138,7 @@ setInterval(() => {
     textTransformP95LatencyMs: transformMetrics?.p95LatencyMs ?? 0,
   });
 }, 30_000);
-```
+````
 
 Bu yaklaşım OpenTelemetry, veritabanı veya arka plan exporter eklemeden hafif gözlemlenebilirlik sağlar. Telemetri tamamen opsiyoneldir: `telemetry` vermezsen mevcut davranış aynen korunur.
 
@@ -125,6 +156,13 @@ createServer(async (req, res) => {
   await startStreamableHttpServer(server, { req, res });
 }).listen(3000);
 ```
+
+### Yardımcı API'lar
+
+- **Araç Yönetimi**: Güvenli araç sorgulama için `ToolRegistry.has(name)` ve `tryGet(name)`.
+- **Sonuç İşleme**: Başarı ve hata çıktılarını ayırt etmek için `isErrorResult(result)` tip koruması.
+- **Güvenlik**: Özellik tabanlı araçlar için `SecureToolDefinition` ve yetki kontrollerini otomatize etmek için `createSecurityEnforcementHook(config)`.
+- **Korumalar**: Manuel güvenlik doğrulamaları için `assertFeatureEnabled`, `assertAllowedPath` ve `assertAllowedCommand`.
 
 ---
 

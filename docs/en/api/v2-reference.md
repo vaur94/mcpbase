@@ -110,22 +110,19 @@ Shorthand for the default context type with full security config.
 interface ToolDefinition<
   TInput extends ToolInputSchema = ToolInputSchema,
   TOutput extends ToolOutputSchema | undefined = ToolOutputSchema | undefined,
-  TContext extends BaseToolExecutionContext = ToolExecutionContext,
+  TContext extends BaseToolExecutionContext = BaseToolExecutionContext,
 > {
   readonly name: string;
   readonly title: string;
   readonly description: string;
   readonly inputSchema: TInput;
   readonly outputSchema?: TOutput;
-  readonly security?: {
-    readonly requiredFeature?: keyof RuntimeConfig['security']['features'];
-  };
   readonly annotations?: ToolAnnotations;
   execute(input: z.infer<TInput>, context: TContext): Promise<ToolSuccessPayload>;
 }
 ```
 
-Defines a tool that can be executed by the runtime. Input and output schemas use Zod for validation.
+Defines a tool that can be executed by the runtime. Input and output schemas use Zod for validation. Security metadata is handled separately via `SecureToolDefinition` to keep the base interface lean.
 
 **Example:**
 
@@ -238,14 +235,37 @@ Creates a partial schema where all fields are optional. Used for configuration f
 function loadConfig(argv?: string[]): Promise<RuntimeConfig>;
 function loadConfig<TConfig extends BaseRuntimeConfig = RuntimeConfig>(
   schema: ZodSchema<TConfig>,
-  options?: LoadConfigOptions,
+  options?: LoadConfigOptions<TConfig>,
 ): Promise<TConfig>;
 
-interface LoadConfigOptions {
+interface LoadConfigOptions<TConfig extends BaseRuntimeConfig = RuntimeConfig> {
   envPrefix?: string; // Default: 'MCPBASE_'
   defaultConfigFile?: string; // Default: 'mcpbase.config.json'
   argv?: string[];
+  defaults?: DeepPartial<TConfig>;
+  envMapper?: (envPrefix: string) => DeepPartial<TConfig>;
+  cliMapper?: (args: string[]) => DeepPartial<TConfig>;
 }
+```
+
+Loads configuration with layered precedence: defaults → config file → environment variables → CLI arguments. The `envMapper` and `cliMapper` allow custom mapping of environment variables and CLI arguments into your config structure.
+
+**Example:**
+
+```typescript
+import { loadConfig, runtimeConfigSchema, envBoolean } from '@vaur94/mcpbase';
+
+const config = await loadConfig(myConfigSchema, {
+  envPrefix: 'MYAPP_',
+  defaults: { logging: { level: 'debug' } },
+  envMapper: (prefix) => ({
+    security: {
+      features: {
+        customFeature: envBoolean(`${prefix}CUSTOM_FEATURE`),
+      },
+    },
+  }),
+});
 ```
 
 Loads configuration with layered precedence: defaults → config file → environment variables → CLI arguments.
@@ -352,13 +372,15 @@ const result = await runtime.executeTool('my_tool', { input: 'hello' });
 
 ```typescript
 class ToolRegistry<TContext extends BaseToolExecutionContext = BaseToolExecutionContext> {
-  public register(tool: ToolDefinition<any, any, any>): void;
+  public register(tool: ToolDefinition<any, any, TContext>): void;
   public get(name: string): ToolDefinition<any, any, TContext>;
+  public has(name: string): boolean;
+  public tryGet(name: string): ToolDefinition<any, any, TContext> | undefined;
   public list(): ToolDefinition<any, any, TContext>[];
 }
 ```
 
-In-memory registry for tools. Throws `AppError('TOOL_NOT_FOUND')` if a tool doesn't exist.
+In-memory registry for tools. `get` throws `AppError('TOOL_NOT_FOUND')` if a tool doesn't exist, while `tryGet` returns `undefined`.
 
 ### ExecutionHooks
 
@@ -387,6 +409,17 @@ interface ExecutionHooks<TContext extends BaseToolExecutionContext = BaseToolExe
 ```
 
 Lifecycle hooks for tool execution. Use for logging, metrics, caching, or custom error handling.
+
+### LifecycleHooks
+
+```typescript
+interface LifecycleHooks<TConfig extends BaseRuntimeConfig = BaseRuntimeConfig> {
+  onStart?(config: TConfig): Promise<void> | void;
+  onShutdown?(): Promise<void> | void;
+}
+```
+
+Hooks for global application lifecycle events, triggered during `bootstrap`.
 
 ### Telemetry
 
@@ -480,15 +513,16 @@ interface BootstrapOptions<TConfig, TContext> {
   configSchema?: ZodSchema<TConfig>;
   tools?: ToolDefinition<any, any, TContext>[] | (() => ToolDefinition<any, any, TContext>[]);
   loggerFactory?: (config: TConfig) => Logger;
-  contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
+  contextFactory?: (toolName: string, requestId, config: TConfig) => TContext;
   hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
+  lifecycle?: LifecycleHooks<TConfig>;
   telemetry?: TelemetryRecorder;
   transport?: 'stdio';
   argv?: string[];
 }
 ```
 
-High-level bootstrap function that sets up the entire MCP server. Handles config loading, runtime creation, server setup, and shutdown signals.
+High-level bootstrap function that sets up the entire MCP server. Handles config loading, runtime creation, server setup, and shutdown signals. The `lifecycle` option allows you to run code on server start and shutdown.
 
 **Example:**
 
@@ -699,19 +733,33 @@ import {
   assertFeatureEnabled,
   assertAllowedCommand,
   assertAllowedPath,
+  createSecurityEnforcementHook,
 } from '@vaur94/mcpbase/security';
+
+import type { SecureToolDefinition, ToolSecurityDefinition } from '@vaur94/mcpbase/security';
 ```
 
-Security guard functions for feature flags, command allowlists, and path allowlists.
+Security guard functions and types. `SecureToolDefinition` extends `ToolDefinition` with an optional `security` field. Use `createSecurityEnforcementHook` to automatically enforce feature flags defined in tool metadata.
 
 **Example:**
 
 ```typescript
-import { assertFeatureEnabled } from '@vaur94/mcpbase/security';
+import { createSecurityEnforcementHook, type SecureToolDefinition } from '@vaur94/mcpbase/security';
+import { bootstrap } from '@vaur94/mcpbase';
 
-// In a tool's execute function:
-assertFeatureEnabled(context.config.security, 'serverInfoTool');
-// Throws AppError('PERMISSION_DENIED') if feature is disabled
+const mySecureTool: SecureToolDefinition = {
+  name: 'secure_tool',
+  // ...
+  security: { requiredFeature: 'myFeature' },
+  async execute(input, context) {
+    // ...
+  },
+};
+
+await bootstrap({
+  tools: [mySecureTool],
+  hooks: [createSecurityEnforcementHook(config.security)],
+});
 ```
 
 ---
@@ -730,9 +778,8 @@ Deep merges two objects. Arrays are replaced, not merged.
 
 ### createRequestId
 
-```typescript
-function createRequestId(): string;
-```
+````typescript
+function createRequestId(): string;\n```
 
 Creates a cryptographically secure UUID for request tracking.
 
@@ -743,11 +790,18 @@ function createTextContent(text: string): TextContentBlock;
 
 interface TextContentBlock {
   readonly type: 'text';
-  readonly text: string;
-}
-```
+  readonly text: string;\n}
+````
 
 Creates a text content block for tool responses.
+
+### isErrorResult
+
+```typescript
+function isErrorResult(result: SuccessResult | ErrorResult): result is ErrorResult;
+```
+
+Type guard to check if an execution result is an error.
 
 ### sanitizeMessage
 
