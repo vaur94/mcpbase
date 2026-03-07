@@ -1,70 +1,241 @@
 # mcpbase
 
-[English](./README.en.md) | [Turkce](./README.tr.md)
+[🇬🇧 English](./README.md) | 🇹🇷 Türkçe
 
-`mcpbase`, yeni MCP sunuculari icin stdio-first bir temel depodur. Amaci; tekrar kullanilabilir bir mimari, gercek kalite kapilari ve yayinlanabilir bir repo iskeletini tek yerde toplamak.
+> **`@vaur94/mcpbase`** — TypeScript ile MCP sunucusu geliştirmek için production-ready temel kütüphane. Generic tipler, 6 MCP capability, Streamable HTTP transport ve execution hook sistemi — tek bir kurulabilir pakette.
 
-## Neden var
+---
 
-- yeni MCP depolarini sifirdan kurma maliyetini azaltir
-- runtime, config, loglama ve guvenlik davranislarini tutarli hale getirir
-- placeholder yerine gercek birim, entegrasyon ve protokol testleri sunar
-- GitHub ve npm yayin akisi icin hazir bir temel verir
+## ✨ Neden mcpbase
 
-## Hizli Baslangic
+- 📦 **Fork değil, kur** — `npm install @vaur94/mcpbase` ile başla, genişlet
+- 🧬 **Tamamen generic** — `BaseRuntimeConfig<TExtras>`, `AppError<TCode>`, `ToolDefinition<I,O,TContext>` — varsayılan olarak tip güvenli
+- 🔌 **6 MCP capability** — Tools, Resources, Prompts, Logging, Sampling, Roots
+- 🌐 **Çift transport** — stdio + Streamable HTTP hazır
+- 🪝 **Hook sistemi** — `beforeExecute`, `afterExecute`, `onError` ile cross-cutting concerns
+- 🧪 **TDD test paketi** — 200+ test, %90+ coverage, protokol testleri dahil
+- 🚀 **CI hazır** — GitHub Actions, semantic-release, Dependabot kurulu
 
-En hizli kurulum yolu:
+---
 
-```bash
-./scripts/install.sh
-```
-
-Sonra ornek ayarla sunucuyu baslat:
-
-```bash
-node dist/index.js --config examples/mcpbase.config.json
-```
-
-## Manuel Kurulum
+## 📦 Kurulum
 
 ```bash
-npm install
-npm run build
-node dist/index.js --config examples/mcpbase.config.json
+npm install @vaur94/mcpbase
+# peer dependency'ler
+npm install zod @modelcontextprotocol/sdk
 ```
 
-## One Cikan Ozellikler
+---
 
-- katmanli TypeScript kaynak kod yapisi
-- `zod` ile giris ve cikis dogrulamasi
-- deny-by-default guvenlik yardimcilari
-- stderr uzerinden yapilandirilmis loglama
-- `vitest` ile coverage, entegrasyon ve stdio protokol testi
-- GitHub Actions, Dependabot ve semantic-release entegrasyonu
+## ⚡ Hızlı Başlangıç
 
-## Proje Haritasi
+### Minimal — sıfır config
 
-- `src/core` - hata ve sonuc modelleri
-- `src/application` - runtime akisi ve arac kaydi
-- `src/transport/mcp` - stdio MCP adaptoru
-- `src/config` - varsayilan, dosya, env ve CLI precedence
-- `src/security` - izin ve koruma guardlari
-- `tests/` - unit, integration, protocol ve fixtures
-- `docs/` - Turkce dokuman agaci
-- `docs/en/` - Ingilizce dokuman agaci
+```typescript
+import { bootstrap } from '@vaur94/mcpbase';
 
-## Dokumanlar
+await bootstrap(); // örnek araçlarla stdio MCP sunucusu başlatır
+```
 
-- Varsayilan English landing page: `README.md`
-- English README: `README.en.md`
-- English docs index: `docs/README.en.md`
-- Turkce mimari dokumanlari: `docs/architecture/`
-- Turkce gelistirici rehberi: `docs/developer-guide/`
+### Kendi araçlarınla
 
-## Ne zaman kullanilir
+```typescript
+import { bootstrap } from '@vaur94/mcpbase';
+import { z } from 'zod';
 
-Yeni bir MCP sunucusu baslatirken config yukleme, validation, loglama, guvenlik guardlari, test duzeni ve release akisini tekrar kurmak istemiyorsan `mcpbase` dogru baslangic noktasidir.
+await bootstrap({
+  tools: [
+    {
+      name: 'selamla',
+      description: 'Birini selamla',
+      inputSchema: z.object({ isim: z.string() }),
+      execute: async ({ isim }) => ({
+        content: [{ type: 'text', text: `Merhaba, ${isim}!` }],
+      }),
+    },
+  ],
+});
+```
 
-## Lisans
+### Özel config şemasıyla
 
-MIT. Ayrinti icin `LICENSE` dosyasina bak.
+```typescript
+import { bootstrap, createRuntimeConfigSchema } from '@vaur94/mcpbase';
+import { z } from 'zod';
+
+const configSchema = createRuntimeConfigSchema(
+  z.object({
+    depolama: z.object({ yol: z.string() }),
+  }),
+);
+
+await bootstrap({
+  configSchema,
+  tools: araçlarım,
+  hooks: {
+    beforeExecute: async (tool, input, ctx) => {
+      console.error(`[${ctx.requestId}] → ${tool.name}`);
+    },
+  },
+});
+```
+
+### Streamable HTTP transport
+
+```typescript
+import { createMcpServer, startStreamableHttpServer, loadConfig } from '@vaur94/mcpbase';
+import { createServer } from 'node:http';
+
+const config = await loadConfig(baseRuntimeConfigSchema);
+const runtime = new ApplicationRuntime({ config, logger, tools });
+const server = createMcpServer(runtime, { enableLogging: true });
+
+createServer(async (req, res) => {
+  await startStreamableHttpServer(server, { req, res });
+}).listen(3000);
+```
+
+---
+
+## 🏗️ Proje Yapısı
+
+```
+src/
+├── contracts/          # Generic tip tanımları
+│   ├── runtime-config.ts   # BaseRuntimeConfig<TExtras>, createRuntimeConfigSchema
+│   ├── tool-contract.ts    # ToolDefinition<I,O,TContext>, ToolAnnotations
+│   └── hooks.ts            # ExecutionHooks<TContext>
+├── core/               # Hata + context
+│   ├── app-error.ts        # AppError<TCode>, BaseAppErrorCode
+│   └── execution-context.ts # BaseToolExecutionContext<TConfig>
+├── application/        # Runtime + registry
+│   ├── runtime.ts          # ApplicationRuntime<TConfig,TContext>
+│   └── tool-registry.ts    # ToolRegistry<TContext>
+├── config/             # Config yükleme
+│   └── load-config.ts      # loadConfig<TConfig>(schema, options?)
+├── capabilities/       # MCP capability modülleri
+│   ├── resources.ts        # registerResources, registerResourceTemplates
+│   ├── prompts.ts          # registerPrompts, registerPromptTemplates
+│   ├── logging.ts          # createMcpLoggingBridge
+│   ├── sampling.ts         # createSamplingHelper
+│   └── roots.ts            # createRootsHandler
+├── transport/          # Transport adaptörleri
+│   ├── mcp/server.ts       # createMcpServer, startStdioServer
+│   ├── mcp/streamable-http.ts # startStreamableHttpServer
+│   └── transport-factory.ts   # createTransport (stdio | streamable-http)
+├── examples/index.ts   # @vaur94/mcpbase/examples subpath
+└── security/index.ts   # @vaur94/mcpbase/security subpath
+```
+
+---
+
+## 🔁 Yeni Proje İçin Yeniden Adlandırma
+
+mcpbase üzerine yeni bir MCP sunucusu geliştirirken şunları güncelle:
+
+### 1. `package.json`
+```json
+{
+  "name": "@kapsamın/mcp-sunucun",
+  "version": "1.0.0",
+  "description": "MCP sunucunun açıklaması"
+}
+```
+
+### 2. Sunucu kimliği (config veya bootstrap içinde)
+```typescript
+// mcpbase.config.json
+{
+  "server": {
+    "name": "mcp-sunucun",
+    "version": "1.0.0"
+  }
+}
+```
+
+### 3. Config şemasını genişlet
+```typescript
+import { createRuntimeConfigSchema } from '@vaur94/mcpbase';
+import { z } from 'zod';
+
+// Kendi domain'ine özgü config alanlarını ekle
+export const benimConfigSchema = createRuntimeConfigSchema(
+  z.object({
+    depolama: z.object({ kokYol: z.string() }),
+    limitler: z.object({ maxDosyaBoyutu: z.number().default(10_000_000) }),
+  }),
+);
+```
+
+### 4. Hata kodlarını genişlet
+```typescript
+import type { BaseAppErrorCode } from '@vaur94/mcpbase';
+
+export type BenimHataKodum = BaseAppErrorCode | 'DEPOLAMA_HATASI' | 'KOTA_ASILDI';
+```
+
+### 5. Execution context'i genişlet
+```typescript
+import type { BaseToolExecutionContext } from '@vaur94/mcpbase';
+import type { BenimConfigum } from './config.js';
+
+export interface BenimContextim extends BaseToolExecutionContext<BenimConfigum> {
+  depolama: DepolamaYoneticisi;
+}
+```
+
+### 6. Hepsini birleştir
+```typescript
+import { bootstrap } from '@vaur94/mcpbase';
+import { benimConfigSchema } from './config.js';
+import { araçlarım } from './tools/index.js';
+
+await bootstrap<BenimConfigum, BenimContextim>({
+  configSchema: benimConfigSchema,
+  tools: araçlarım,
+  contextFactory: (toolName, requestId, config) => ({
+    requestId,
+    toolName,
+    config,
+    depolama: new DepolamaYoneticisi(config.depolama.kokYol),
+  }),
+});
+```
+
+### 7. Subpath import'lar
+```typescript
+// Örnek araçlar (referans / test için)
+import { createExampleTools } from '@vaur94/mcpbase/examples';
+
+// Güvenlik guard'ları + PERMISSION_DENIED hata kodu
+import { assertFeatureEnabled, assertAllowedPath, PERMISSION_DENIED } from '@vaur94/mcpbase/security';
+```
+
+---
+
+## 📚 Dokümantasyon
+
+- 🗺️ [v1 → v2 Geçiş Rehberi](./docs/en/migration/v1-to-v2.md)
+- 📖 [API Referansı](./docs/en/api/v2-reference.md)
+- 🏛️ [Mimari Genel Bakış](./docs/en/architecture/overview.md)
+- 🔧 [Geliştirici Rehberi](./docs/en/developer-guide/local-development.md)
+- 🇬🇧 [English Documentation](./docs/en/)
+
+---
+
+## 🧪 Kalite Kapıları
+
+```bash
+npm run ci:check      # format + lint + typecheck + coverage + build
+npm run test          # birim testler (202 test, 25 dosya)
+npm run test:protocol # stdio protokol testleri (4 test)
+npm run test:coverage # coverage raporu (%90+ eşikler)
+npm run build         # dist/ üretir (3 entry point)
+```
+
+---
+
+## 📄 Lisans
+
+MIT. Bkz. [`LICENSE`](./LICENSE).
