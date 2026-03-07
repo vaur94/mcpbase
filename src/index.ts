@@ -103,6 +103,9 @@ export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result
 
 export type { ExecutionHooks } from './contracts/hooks.js';
 
+export type { ResourceDefinition, ResourceTemplateDefinition } from './capabilities/resources.js';
+export { registerResources, registerResourceTemplates } from './capabilities/resources.js';
+
 export async function bootstrap<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
   TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,

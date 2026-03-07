@@ -1,0 +1,33 @@
+Task 12: Resource Registration Abstraction + Contract
+=====================================================
+
+Files created:
+- src/capabilities/resources.ts
+- tests/unit/capabilities-resources.test.ts
+
+Files modified:
+- src/index.ts (barrel exports added)
+
+Interfaces:
+- ResourceDefinition: uri, name, description?, mimeType?, handler (ReadResourceCallback)
+- ResourceTemplateDefinition: uriTemplate, name, description?, mimeType?, handler (ReadResourceTemplateCallback)
+
+Functions:
+- registerResources(server, resources): registers static resources via server.resource()
+- registerResourceTemplates(server, templates): registers template resources via ResourceTemplate + server.resource()
+
+Test results (12 tests):
+- ResourceDefinition arayuzu: zorunlu alanlari kabul eder ✓
+- ResourceDefinition arayuzu: opsiyonel alanlari kabul eder ✓
+- ResourceTemplateDefinition arayuzu: zorunlu alanlari kabul eder ✓
+- ResourceTemplateDefinition arayuzu: opsiyonel alanlari kabul eder ✓
+- registerResources: tek bir statik kaynak kaydeder ✓
+- registerResources: metadata ile statik kaynak kaydeder ✓
+- registerResources: birden fazla kaynak kaydeder ✓
+- registerResources: bos dizi ile hata vermez ✓
+- registerResourceTemplates: tek bir sablon kaynak kaydeder ✓
+- registerResourceTemplates: metadata ile sablon kaynak kaydeder ✓
+- registerResourceTemplates: birden fazla sablon kaydeder ✓
+- registerResourceTemplates: bos dizi ile hata vermez ✓
+
+TypeScript check: npx tsc --noEmit → zero errors
