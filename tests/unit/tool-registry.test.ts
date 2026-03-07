@@ -42,6 +42,36 @@ describe('ToolRegistry', () => {
     expect(() => registry.get('missing')).toThrow(/Tool not found/u);
   });
 
+  it('has() ile kayitli aracin varligini kontrol eder', () => {
+    const registry = new ToolRegistry();
+    const tool = createExampleTools()[0];
+
+    expect(tool).toBeDefined();
+    if (!tool) {
+      throw new Error('Ornek arac bulunamadi.');
+    }
+
+    registry.register(tool);
+
+    expect(registry.has(tool.name)).toBe(true);
+    expect(registry.has('missing')).toBe(false);
+  });
+
+  it('tryGet() kayitli araci doner, bulunmuyorsa undefined dondurur', () => {
+    const registry = new ToolRegistry();
+    const tool = createExampleTools()[0];
+
+    expect(tool).toBeDefined();
+    if (!tool) {
+      throw new Error('Ornek arac bulunamadi.');
+    }
+
+    registry.register(tool);
+
+    expect(registry.tryGet(tool.name)?.name).toBe(tool.name);
+    expect(registry.tryGet('missing')).toBeUndefined();
+  });
+
   // Generic tests for TContext
   it('ToolRegistry<TContext> doğru tipli tool kaydeder', () => {
     interface CustomContext extends BaseToolExecutionContext<RuntimeConfig> {

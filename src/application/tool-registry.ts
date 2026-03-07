@@ -33,6 +33,16 @@ export class ToolRegistry<TContext extends BaseToolExecutionContext = BaseToolEx
     return tool;
   }
 
+  public has(name: string): boolean {
+    return this.tools.has(name);
+  }
+
+  public tryGet(
+    name: string,
+  ): ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext> | undefined {
+    return this.tools.get(name);
+  }
+
   public list(): ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[] {
     return [...this.tools.values()];
   }
