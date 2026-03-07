@@ -8,11 +8,11 @@ import { createFixtureConfig } from '../fixtures/runtime-config.js';
 describe('ApplicationRuntime normalization', () => {
   it('returns a normalized result for successful output', async () => {
     const config = createFixtureConfig();
-    const runtime = new ApplicationRuntime(
+    const runtime = new ApplicationRuntime({
       config,
-      new StderrLogger({ level: 'error', includeTimestamp: false }),
-      createExampleTools(),
-    );
+      logger: new StderrLogger({ level: 'error', includeTimestamp: false }),
+      tools: createExampleTools(),
+    });
 
     const result = await runtime.executeTool('text_transform', {
       text: 'Hello',

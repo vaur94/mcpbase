@@ -8,11 +8,11 @@ import { createFixtureConfig } from '../fixtures/runtime-config.js';
 
 describe('MCP transport', () => {
   it('registers runtime tools on the MCP server', () => {
-    const runtime = new ApplicationRuntime(
-      createFixtureConfig(),
-      new StderrLogger({ level: 'error', includeTimestamp: false }),
-      createExampleTools(),
-    );
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: new StderrLogger({ level: 'error', includeTimestamp: false }),
+      tools: createExampleTools(),
+    });
 
     const server = createMcpServer(runtime);
 
@@ -20,11 +20,11 @@ describe('MCP transport', () => {
   });
 
   it('connects through the stdio transport', async () => {
-    const runtime = new ApplicationRuntime(
-      createFixtureConfig(),
-      new StderrLogger({ level: 'error', includeTimestamp: false }),
-      createExampleTools(),
-    );
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: new StderrLogger({ level: 'error', includeTimestamp: false }),
+      tools: createExampleTools(),
+    });
     const server = createMcpServer(runtime);
     const connectSpy = vi.spyOn(server, 'connect').mockResolvedValue(undefined as never);
 

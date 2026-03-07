@@ -1,0 +1,27 @@
+Task 8 Evidence: No Security Assertions in Runtime
+====================================================
+Date: 2026-03-07
+
+Verification command:
+$ grep -r "assertFeatureEnabled" src/application/runtime.ts
+(no output - exit code 1, no matches found)
+
+Changes:
+- Removed `import { assertFeatureEnabled } from '../security/guards.js'` from runtime.ts
+- Removed the `if (tool.security?.requiredFeature) { assertFeatureEnabled(...) }` block from executeTool
+- Security assertions are no longer a concern of ApplicationRuntime
+- Security will be handled via hooks in T9
+
+Impact on tests:
+- tests/integration/runtime.test.ts: "rejects calls when feature is disabled" test REMOVED
+  - Replaced with "guvenlik kontrolu olmadan arac calistirir" test that verifies tools run 
+    even when feature is disabled in config
+- tests/unit/runtime.test.ts: Added "runtime assertFeatureEnabled cagirmaz" test that proves
+  tools execute successfully regardless of security.features config
+
+Import change:
+- OLD: import { assertFeatureEnabled } from '../security/guards.js';
+- NEW: (removed entirely)
+
+The assertFeatureEnabled function still exists in src/security/guards.ts and is still 
+exported from src/index.ts for downstream consumers to use in hooks.

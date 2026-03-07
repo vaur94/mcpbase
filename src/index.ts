@@ -30,6 +30,7 @@ import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
 
 export { ApplicationRuntime } from './application/runtime.js';
+export type { RuntimeOptions } from './application/runtime.js';
 export { createExampleTools } from './application/example-tools.js';
 export { ToolRegistry } from './application/tool-registry.js';
 export { loadConfig } from './config/load-config.js';
@@ -83,7 +84,7 @@ export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result
 export async function bootstrap(argv: string[] = process.argv.slice(2)): Promise<void> {
   const config = await loadConfig(argv);
   const logger = new StderrLogger(config.logging);
-  const runtime = new ApplicationRuntime(config, logger, createExampleTools());
+  const runtime = new ApplicationRuntime({ config, logger, tools: createExampleTools() });
   const server = createMcpServer(runtime);
 
   await startStdioServer(server);

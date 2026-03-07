@@ -7,11 +7,11 @@ import { createFixtureConfig } from '../fixtures/runtime-config.js';
 
 describe('example tools', () => {
   it('runs the server_info tool', async () => {
-    const runtime = new ApplicationRuntime(
-      createFixtureConfig(),
-      new StderrLogger({ level: 'error', includeTimestamp: false }),
-      createExampleTools(),
-    );
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: new StderrLogger({ level: 'error', includeTimestamp: false }),
+      tools: createExampleTools(),
+    });
 
     const result = await runtime.executeTool('server_info', {});
 
@@ -24,11 +24,11 @@ describe('example tools', () => {
   });
 
   it('covers the remaining text_transform modes', async () => {
-    const runtime = new ApplicationRuntime(
-      createFixtureConfig(),
-      new StderrLogger({ level: 'error', includeTimestamp: false }),
-      createExampleTools(),
-    );
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: new StderrLogger({ level: 'error', includeTimestamp: false }),
+      tools: createExampleTools(),
+    });
 
     const reverseResult = await runtime.executeTool('text_transform', {
       text: 'abc',

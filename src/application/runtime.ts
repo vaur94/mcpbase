@@ -1,12 +1,21 @@
 import { ensureAppError, type AppError, type BaseAppErrorCode } from '../core/app-error.js';
-import type { ToolExecutionContext } from '../core/execution-context.js';
+import type { BaseToolExecutionContext } from '../core/execution-context.js';
 import type { ErrorResult, SuccessResult } from '../core/result.js';
-import type { RuntimeConfig } from '../contracts/runtime-config.js';
+import type { BaseRuntimeConfig } from '../contracts/runtime-config.js';
 import type { ToolDefinition } from '../contracts/tool-contract.js';
 import type { Logger } from '../logging/logger.js';
 import { createRequestId } from '../shared/request-id.js';
-import { assertFeatureEnabled } from '../security/guards.js';
 import { ToolRegistry } from './tool-registry.js';
+
+export interface RuntimeOptions<
+  TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
+  TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,
+> {
+  readonly config: TConfig;
+  readonly logger: Logger;
+  readonly tools: ToolDefinition<any, any, TContext>[];
+  readonly contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
+}
 
 function createSuccessResult(
   toolName: string,
@@ -50,21 +59,34 @@ function createErrorResult(
   };
 }
 
-export class ApplicationRuntime {
-  public readonly registry: ToolRegistry;
+function defaultContextFactory<
+  TConfig extends BaseRuntimeConfig,
+  TContext extends BaseToolExecutionContext<TConfig>,
+>(toolName: string, requestId: string, config: TConfig): TContext {
+  return { requestId, toolName, config } as TContext;
+}
 
-  public constructor(
-    public readonly config: RuntimeConfig,
-    private readonly logger: Logger,
-    tools: ToolDefinition[],
-  ) {
-    this.registry = new ToolRegistry();
-    for (const tool of tools) {
+export class ApplicationRuntime<
+  TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
+  TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,
+> {
+  public readonly config: TConfig;
+  public readonly registry: ToolRegistry<TContext>;
+  private readonly logger: Logger;
+  private readonly createContext: (toolName: string, requestId: string) => TContext;
+
+  public constructor(options: RuntimeOptions<TConfig, TContext>) {
+    this.config = options.config;
+    this.logger = options.logger;
+    const factory = options.contextFactory ?? defaultContextFactory;
+    this.createContext = (toolName, requestId) => factory(toolName, requestId, this.config);
+    this.registry = new ToolRegistry<TContext>();
+    for (const tool of options.tools) {
       this.registry.register(tool);
     }
   }
 
-  public listTools(): ToolDefinition[] {
+  public listTools(): ToolDefinition<any, any, TContext>[] {
     return this.registry.list();
   }
 
@@ -78,19 +100,11 @@ export class ApplicationRuntime {
   }> {
     const requestId = createRequestId();
     const startedAt = performance.now();
-    const tool = this.registry.get(name);
-    const context: ToolExecutionContext = {
-      requestId,
-      toolName: tool.name,
-      config: this.config,
-    };
 
     try {
-      if (tool.security?.requiredFeature) {
-        assertFeatureEnabled(this.config.security, tool.security.requiredFeature);
-      }
-
+      const tool = this.registry.get(name);
       const input = tool.inputSchema.parse(rawInput);
+      const context = this.createContext(tool.name, requestId);
       const payload = await tool.execute(input, context);
       if (tool.outputSchema && payload.structuredContent) {
         tool.outputSchema.parse(payload.structuredContent);
@@ -111,10 +125,10 @@ export class ApplicationRuntime {
     } catch (error) {
       const appError = ensureAppError<BaseAppErrorCode>(error);
       const durationMs = Math.round(performance.now() - startedAt);
-      const result = createErrorResult(tool.name, requestId, durationMs, appError);
+      const result = createErrorResult(name, requestId, durationMs, appError);
       this.logger.error('Tool execution failed.', {
         requestId,
-        toolName: tool.name,
+        toolName: name,
         durationMs,
         errorCode: result.error.code,
       });
