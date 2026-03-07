@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCliArgs } from '../../src/infrastructure/cli-args.js';
 
 describe('parseCliArgs', () => {
-  it('reads supported override fields', () => {
+  it('reads base override fields', () => {
     const result = parseCliArgs([
       '--config',
       'config.json',
@@ -15,21 +15,50 @@ describe('parseCliArgs', () => {
       'debug',
       '--logging-timestamp',
       'false',
-      '--enable-text-transform-tool',
-      '--allow-command=git',
-      '--allow-path=/tmp/demo',
     ]);
 
     expect(result.configPath).toBe('config.json');
     expect(result.overrides).toEqual({
       server: { name: 'demo', version: '2.0.0' },
       logging: { level: 'debug', includeTimestamp: false },
-      security: {
-        features: { textTransformTool: true },
-        commands: { allowed: ['git'] },
-        paths: { allowed: ['/tmp/demo'] },
-      },
     });
+  });
+
+  it('cliMapper ile ozel argumanlar parse edilebilir', () => {
+    const result = parseCliArgs(['--custom-flag', 'value'], (args) => {
+      const idx = args.indexOf('--custom-flag');
+      if (idx !== -1 && args[idx + 1]) {
+        return { custom: { flag: args[idx + 1] } };
+      }
+      return {};
+    });
+
+    expect(result.overrides).toEqual({ custom: { flag: 'value' } });
+  });
+
+  it('cliMapper sonucu base override verileriyle merge olur', () => {
+    const result = parseCliArgs(['--server-name', 'demo', '--custom-flag', 'value'], (args) => {
+      const idx = args.indexOf('--custom-flag');
+      if (idx !== -1 && args[idx + 1]) {
+        return { custom: { flag: args[idx + 1] } };
+      }
+      return {};
+    });
+
+    expect(result.overrides).toEqual({
+      server: { name: 'demo' },
+      custom: { flag: 'value' },
+    });
+  });
+
+  it('cliMapper bilinmeyen argumanlari atmaz', () => {
+    expect(() => parseCliArgs(['--unknown'], () => ({}))).toThrow(/Unknown argument/u);
+  });
+
+  it('eski security argumanlarini artik kabul etmez', () => {
+    expect(() => parseCliArgs(['--enable-server-info-tool'])).toThrow(/Unknown argument/u);
+    expect(() => parseCliArgs(['--allow-command=git'])).toThrow(/Unknown argument/u);
+    expect(() => parseCliArgs(['--allow-path=/tmp'])).toThrow(/Unknown argument/u);
   });
 
   it('rejects an unknown argument', () => {

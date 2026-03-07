@@ -11,7 +11,12 @@ import {
   partialRuntimeConfigSchema,
   runtimeConfigSchema,
 } from '../../src/contracts/runtime-config.js';
-import type { BaseRuntimeConfig, RuntimeConfig } from '../../src/contracts/runtime-config.js';
+import { baseDefaultConfig } from '../../src/config/default-config.js';
+import type {
+  BaseRuntimeConfig,
+  PartialRuntimeConfig,
+  RuntimeConfig,
+} from '../../src/contracts/runtime-config.js';
 
 describe('logLevelSchema', () => {
   it('tüm geçerli log seviyelerini kabul eder', () => {
@@ -98,6 +103,19 @@ describe('baseRuntimeConfigSchema', () => {
 });
 
 describe('createRuntimeConfigSchema', () => {
+  it('baseDefaultConfig verisi extension alanlari opsiyonelse parse edilir', () => {
+    const extensionSchema = z.object({
+      storage: z
+        .object({
+          path: z.string(),
+        })
+        .optional(),
+    });
+    const schema = createRuntimeConfigSchema(extensionSchema);
+
+    expect(schema.parse(baseDefaultConfig)).toEqual(baseDefaultConfig);
+  });
+
   it('base schema ile extension schema birleştirir', () => {
     const storageExt = z.object({
       storage: z.object({ path: z.string() }),
@@ -256,5 +274,20 @@ describe('BaseRuntimeConfig tipi', () => {
       },
     };
     expect(config.security.features.serverInfoTool).toBe(true);
+  });
+});
+
+describe('PartialRuntimeConfig tipi', () => {
+  it('yalnizca base alanlarin partial halini temsil eder', () => {
+    type SecurityAlaniVarMi = 'security' extends keyof PartialRuntimeConfig ? true : false;
+
+    const securityAlaniVar: SecurityAlaniVarMi = false;
+    const partial: PartialRuntimeConfig = {
+      server: { name: 'ornek' },
+      logging: { includeTimestamp: false },
+    };
+
+    expect(securityAlaniVar).toBe(false);
+    expect(partial.server?.name).toBe('ornek');
   });
 });

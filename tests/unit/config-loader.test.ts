@@ -5,7 +5,8 @@ import * as path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { loadConfig } from '../../src/config/load-config.js';
+import { loadConfig, envName, envBoolean, envList } from '../../src/config/load-config.js';
+import { defaultConfig } from '../../src/config/default-config.js';
 import {
   createRuntimeConfigSchema,
   runtimeConfigSchema,
@@ -17,15 +18,15 @@ const trackedEnv = [
   'MCPBASE_SERVER_VERSION',
   'MCPBASE_LOG_LEVEL',
   'MCPBASE_LOGGING_TIMESTAMP',
-  'MCPBASE_SERVER_INFO_TOOL_ENABLED',
-  'MCPBASE_TEXT_TRANSFORM_TOOL_ENABLED',
   'MCPBASE_ALLOWED_COMMANDS',
-  'MCPBASE_ALLOWED_PATHS',
   'MYAPP_CONFIG',
   'MYAPP_SERVER_NAME',
   'MYAPP_SERVER_VERSION',
   'MYAPP_LOG_LEVEL',
   'MYAPP_LOGGING_TIMESTAMP',
+  'MYAPP_ALLOWED_COMMANDS',
+  'CUSTOM_SERVER_INFO_ENABLED',
+  'CUSTOM_STORAGE_BUCKET',
 ] as const;
 
 const envSnapshot = Object.fromEntries(trackedEnv.map((key) => [key, process.env[key]]));
@@ -43,7 +44,44 @@ afterEach(() => {
 });
 
 describe('loadConfig', () => {
-  it('applies default, file, environment, and CLI precedence', async () => {
+  it('varsayilan katman olarak baseDefaultConfig kullanir', async () => {
+    delete process.env.MCPBASE_SERVER_NAME;
+    delete process.env.MCPBASE_SERVER_VERSION;
+    delete process.env.MCPBASE_LOG_LEVEL;
+    delete process.env.MCPBASE_LOGGING_TIMESTAMP;
+
+    const schema = createRuntimeConfigSchema(z.object({}));
+    const result = await loadConfig(schema, { argv: [] });
+
+    expect(result.server.name).toBe('mcpbase');
+    expect(result.server.version).toBe('0.1.0');
+    expect(result.logging.level).toBe('info');
+    expect(result.logging.includeTimestamp).toBe(true);
+  });
+
+  it('defaults parametresi ile ozel varsayilan katmani kullanir', async () => {
+    const schema = createRuntimeConfigSchema(
+      z.object({
+        storage: z.object({
+          bucket: z.string().min(1),
+        }),
+      }),
+    );
+
+    const result = await loadConfig(schema, {
+      defaults: {
+        server: { name: 'child-server' },
+        storage: { bucket: 'child-bucket' },
+      },
+      argv: [],
+    });
+
+    expect(result.server.name).toBe('child-server');
+    expect(result.server.version).toBe('0.1.0');
+    expect(result.storage.bucket).toBe('child-bucket');
+  });
+
+  it('varsayilan dosya ortam ve cli onceligini mapper ile korur', async () => {
     const tempDir = await mkdtemp(path.join(tmpdir(), 'mcpbase-config-'));
     const configPath = path.join(tempDir, 'mcpbase.json');
 
@@ -62,6 +100,14 @@ describe('loadConfig', () => {
     process.env.MCPBASE_ALLOWED_COMMANDS = 'npm,node';
 
     const result = await loadConfig(runtimeConfigSchema, {
+      defaults: defaultConfig,
+      envMapper: (prefix) => ({
+        security: {
+          commands: {
+            allowed: envList(envName(prefix, 'ALLOWED_COMMANDS')),
+          },
+        },
+      }),
       argv: [
         '--config',
         configPath,
@@ -71,6 +117,15 @@ describe('loadConfig', () => {
         'debug',
         '--allow-command=pnpm',
       ],
+      cliMapper: (args) => ({
+        security: {
+          commands: {
+            allowed: args
+              .filter((arg) => arg.startsWith('--allow-command='))
+              .map((arg) => arg.replace('--allow-command=', '')),
+          },
+        },
+      }),
     });
 
     expect(result.server.name).toBe('cli-server');
@@ -119,5 +174,84 @@ describe('loadConfig', () => {
     expect(result.logging.includeTimestamp).toBe(true);
     expect(result.server.version).toBe('0.1.0');
     expect(result.storage.bucket).toBe('arsiv');
+  });
+
+  it('envMapper ile ozel ortam degiskeni parse edilebilir', async () => {
+    process.env.CUSTOM_SERVER_INFO_ENABLED = 'true';
+    process.env.CUSTOM_STORAGE_BUCKET = 'custom-bucket';
+
+    const schema = createRuntimeConfigSchema(
+      z.object({
+        storage: z.object({ bucket: z.string() }),
+        features: z.object({ serverInfo: z.boolean() }),
+      }),
+    );
+
+    const result = await loadConfig(schema, {
+      envPrefix: 'CUSTOM_',
+      envMapper: (prefix) => ({
+        storage: {
+          bucket: process.env[envName(prefix, 'STORAGE_BUCKET')],
+        },
+        features: {
+          serverInfo: envBoolean(envName(prefix, 'SERVER_INFO_ENABLED')),
+        },
+      }),
+      argv: [],
+    });
+
+    expect(result.storage.bucket).toBe('custom-bucket');
+    expect(result.features.serverInfo).toBe(true);
+  });
+
+  it('envMapper sonucu base env verileriyle merge olur', async () => {
+    process.env.MYAPP_SERVER_NAME = 'mapped-server';
+    process.env.MYAPP_CUSTOM_FLAG = 'true';
+
+    const schema = createRuntimeConfigSchema(
+      z.object({
+        custom: z.object({ flag: z.boolean() }),
+      }),
+    );
+
+    const result = await loadConfig(schema, {
+      envPrefix: 'MYAPP_',
+      envMapper: (prefix) => ({
+        custom: {
+          flag: envBoolean(envName(prefix, 'CUSTOM_FLAG')),
+        },
+      }),
+      argv: [],
+    });
+
+    expect(result.server.name).toBe('mapped-server');
+    expect(result.custom.flag).toBe(true);
+  });
+
+  it('cliMapper ile ozel CLI argumanlari parse edilebilir', async () => {
+    const schema = createRuntimeConfigSchema(
+      z.object({
+        storage: z.object({ bucket: z.string() }),
+      }),
+    );
+
+    const result = await loadConfig(schema, {
+      argv: ['--storage-bucket', 'my-bucket'],
+      cliMapper: (args) => {
+        const bucketIndex = args.indexOf('--storage-bucket');
+        if (bucketIndex !== -1 && args[bucketIndex + 1]) {
+          return { storage: { bucket: args[bucketIndex + 1] } };
+        }
+        return {};
+      },
+    });
+
+    expect(result.storage.bucket).toBe('my-bucket');
+  });
+
+  it('envName envBoolean envList export edilir', () => {
+    expect(typeof envName).toBe('function');
+    expect(typeof envBoolean).toBe('function');
+    expect(typeof envList).toBe('function');
   });
 });
