@@ -1,17 +1,18 @@
-export type AppErrorCode =
+export type BaseAppErrorCode =
   | 'CONFIG_ERROR'
   | 'VALIDATION_ERROR'
   | 'TOOL_NOT_FOUND'
-  | 'TOOL_EXECUTION_ERROR'
-  | 'PERMISSION_DENIED';
+  | 'TOOL_EXECUTION_ERROR';
 
-export class AppError extends Error {
-  public readonly code: AppErrorCode;
+export type AppErrorCode = BaseAppErrorCode | 'PERMISSION_DENIED';
+
+export class AppError<TCode extends string = BaseAppErrorCode> extends Error {
+  public readonly code: TCode;
   public readonly details?: Record<string, unknown>;
   public readonly expose: boolean;
 
   public constructor(
-    code: AppErrorCode,
+    code: TCode,
     message: string,
     options?: {
       details?: Record<string, unknown>;
@@ -27,20 +28,20 @@ export class AppError extends Error {
   }
 }
 
-export function ensureAppError(error: unknown): AppError {
+export function ensureAppError<TCode extends string>(error: unknown): AppError<TCode> {
   if (error instanceof AppError) {
-    return error;
+    return error as AppError<TCode>;
   }
 
-  if (error instanceof Error) {
-    return new AppError('TOOL_EXECUTION_ERROR', error.message, {
-      cause: error,
+  const baseError = new AppError<BaseAppErrorCode>(
+    'TOOL_EXECUTION_ERROR',
+    error instanceof Error ? error.message : 'An unknown application error occurred.',
+    {
+      cause: error instanceof Error ? error : undefined,
+      details: error instanceof Error ? undefined : { error },
       expose: false,
-    });
-  }
+    },
+  );
 
-  return new AppError('TOOL_EXECUTION_ERROR', 'An unknown application error occurred.', {
-    details: { error },
-    expose: false,
-  });
+  return baseError as AppError<TCode>;
 }

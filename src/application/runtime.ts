@@ -1,4 +1,4 @@
-import { ensureAppError } from '../core/app-error.js';
+import { ensureAppError, type AppError, type BaseAppErrorCode } from '../core/app-error.js';
 import type { ToolExecutionContext } from '../core/execution-context.js';
 import type { ErrorResult, SuccessResult } from '../core/result.js';
 import type { RuntimeConfig } from '../contracts/runtime-config.js';
@@ -29,7 +29,7 @@ function createErrorResult(
   toolName: string,
   requestId: string,
   durationMs: number,
-  error: ReturnType<typeof ensureAppError>,
+  error: AppError<BaseAppErrorCode>,
 ): ErrorResult {
   return {
     content: [
@@ -109,7 +109,7 @@ export class ApplicationRuntime {
         structuredContent: result.structuredContent,
       };
     } catch (error) {
-      const appError = ensureAppError(error);
+      const appError = ensureAppError<BaseAppErrorCode>(error);
       const durationMs = Math.round(performance.now() - startedAt);
       const result = createErrorResult(tool.name, requestId, durationMs, appError);
       this.logger.error('Tool execution failed.', {
