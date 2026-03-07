@@ -1,5 +1,5 @@
 {
-  "name": "mcpbase",
+  "name": "@vaur94/mcpbase",
   "version": "1.0.1",
   "description": "Stdio-first reference repository for future MCP servers.",
   "type": "module",
