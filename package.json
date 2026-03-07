@@ -33,6 +33,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "overrides": {
+    "@semantic-release/npm": "^13.1.5"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vaur94/mcpbase.git"
