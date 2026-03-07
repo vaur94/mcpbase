@@ -34,7 +34,6 @@ import { ensureAppError } from './core/app-error.js';
 import type { Logger, LogEntry, LogLevel } from './logging/logger.js';
 import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
-import { startStreamableHttpServer } from './transport/mcp/streamable-http.js';
 
 export interface BootstrapOptions<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,

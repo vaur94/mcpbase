@@ -4,9 +4,27 @@ import { ApplicationRuntime } from '../../src/application/runtime.js';
 import { createExampleTools } from '../../src/application/example-tools.js';
 import { StderrLogger } from '../../src/logging/stderr-logger.js';
 import { createMcpServer } from '../../src/transport/mcp/server.js';
-import { startStreamableHttpServer } from '../../src/transport/mcp/streamable-http.js';
 import type { StreamableHttpOptions } from '../../src/transport/mcp/streamable-http.js';
 import { createFixtureConfig } from '../fixtures/runtime-config.js';
+
+const mockHandleRequest = vi.fn().mockResolvedValue(undefined);
+const mockSessionId = vi.fn().mockReturnValue(undefined);
+let capturedOptions: Record<string, unknown> = {};
+
+vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => ({
+  StreamableHTTPServerTransport: vi.fn().mockImplementation((opts: Record<string, unknown>) => {
+    capturedOptions = opts;
+    const sessionIdGen = opts['sessionIdGenerator'] as (() => string) | undefined;
+    const sid = sessionIdGen ? sessionIdGen() : undefined;
+    mockSessionId.mockReturnValue(sid);
+    return {
+      handleRequest: mockHandleRequest,
+      get sessionId() {
+        return mockSessionId();
+      },
+    };
+  }),
+}));
 
 function createTestServer() {
   const runtime = new ApplicationRuntime({
@@ -19,6 +37,8 @@ function createTestServer() {
 
 describe('Streamable HTTP transport', () => {
   it('sunucu baglantisi kurar ve transport dondurur', async () => {
+    const { startStreamableHttpServer } =
+      await import('../../src/transport/mcp/streamable-http.js');
     const server = createTestServer();
     const connectSpy = vi.spyOn(server, 'connect').mockResolvedValue(undefined as never);
 
@@ -29,11 +49,15 @@ describe('Streamable HTTP transport', () => {
 
     expect(connectSpy).toHaveBeenCalledOnce();
     expect(transport).toBeDefined();
+    expect(mockHandleRequest).toHaveBeenCalledWith(fakeReq, fakeRes, undefined);
 
     connectSpy.mockRestore();
+    mockHandleRequest.mockClear();
   });
 
   it('sessionId secenegi verilmezse sessionIdGenerator undefined olur', async () => {
+    const { startStreamableHttpServer } =
+      await import('../../src/transport/mcp/streamable-http.js');
     const server = createTestServer();
     const connectSpy = vi.spyOn(server, 'connect').mockResolvedValue(undefined as never);
 
@@ -42,12 +66,16 @@ describe('Streamable HTTP transport', () => {
       res: {} as StreamableHttpOptions['res'],
     });
 
+    expect(capturedOptions['sessionIdGenerator']).toBeUndefined();
     expect(transport.sessionId).toBeUndefined();
 
     connectSpy.mockRestore();
+    mockHandleRequest.mockClear();
   });
 
   it('sessionId secenegi verilirse transport uzerinde erisilebilinir', async () => {
+    const { startStreamableHttpServer } =
+      await import('../../src/transport/mcp/streamable-http.js');
     const server = createTestServer();
     const connectSpy = vi.spyOn(server, 'connect').mockResolvedValue(undefined as never);
 
@@ -60,27 +88,12 @@ describe('Streamable HTTP transport', () => {
     expect(transport.sessionId).toBe('test-session-42');
 
     connectSpy.mockRestore();
+    mockHandleRequest.mockClear();
   });
 
-  it('handleRequest metodu req ve res ile cagrilir', async () => {
-    const server = createTestServer();
-    const connectSpy = vi.spyOn(server, 'connect').mockResolvedValue(undefined as never);
-
-    const fakeReq = {} as StreamableHttpOptions['req'];
-    const fakeRes = {} as StreamableHttpOptions['res'];
-
-    const transport = await startStreamableHttpServer(server, { req: fakeReq, res: fakeRes });
-
-    const handleSpy = vi.spyOn(transport, 'handleRequest').mockResolvedValue(undefined);
-    await transport.handleRequest(fakeReq, fakeRes);
-
-    expect(handleSpy).toHaveBeenCalledWith(fakeReq, fakeRes);
-
-    connectSpy.mockRestore();
-    handleSpy.mockRestore();
-  });
-
-  it('parsedBody secenegi verilirse handleRequest a iletilir', async () => {
+  it('parsedBody secenegi verilirse handleRequest e iletilir', async () => {
+    const { startStreamableHttpServer } =
+      await import('../../src/transport/mcp/streamable-http.js');
     const server = createTestServer();
     const connectSpy = vi.spyOn(server, 'connect').mockResolvedValue(undefined as never);
 
@@ -88,18 +101,15 @@ describe('Streamable HTTP transport', () => {
     const fakeRes = {} as StreamableHttpOptions['res'];
     const parsedBody = { jsonrpc: '2.0', method: 'initialize' };
 
-    const transport = await startStreamableHttpServer(server, {
+    await startStreamableHttpServer(server, {
       req: fakeReq,
       res: fakeRes,
       parsedBody,
     });
 
-    const handleSpy = vi.spyOn(transport, 'handleRequest').mockResolvedValue(undefined);
-    await transport.handleRequest(fakeReq, fakeRes, parsedBody);
-
-    expect(handleSpy).toHaveBeenCalledWith(fakeReq, fakeRes, parsedBody);
+    expect(mockHandleRequest).toHaveBeenCalledWith(fakeReq, fakeRes, parsedBody);
 
     connectSpy.mockRestore();
-    handleSpy.mockRestore();
+    mockHandleRequest.mockClear();
   });
 });
