@@ -12,6 +12,7 @@ import {
   bootstrap,
   createRuntimeConfigSchema,
   createTextContent,
+  isErrorResult,
   loadConfig,
 } from '../../src/index.js';
 import type {
@@ -176,6 +177,9 @@ describe('generic tipler', () => {
 
     expect(capturedContext?.tenantId).toBe('tenant-runtime');
     expect(capturedContext?.config.storage.path).toBe('/var/lib/storage');
+    if (isErrorResult(result)) {
+      throw new Error('Basarili sonuc bekleniyordu.');
+    }
     expect(result.structuredContent).toEqual({
       location: '/var/lib/storage/runtime.log',
       tenantId: 'tenant-runtime',
