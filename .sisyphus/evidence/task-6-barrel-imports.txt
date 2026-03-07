@@ -1,0 +1,62 @@
+Task 6: Export Completeness — Barrel All Types + Utilities
+===========================================================
+
+Date: 2026-03-07
+Commit: f55291c (before changes)
+
+VERIFICATION RESULTS:
+- npx tsc --noEmit: ZERO ERRORS ✓
+
+EXPORTED SYMBOLS (src/index.ts):
+--------------------------------
+
+Classes/Functions:
+- ApplicationRuntime
+- createExampleTools
+- ToolRegistry
+- loadConfig
+- ensureAppError
+- createTextContent
+- StderrLogger
+- bootstrap
+- AppError
+- deepMerge
+- createRequestId
+- sanitizeMessage
+
+Zod Schemas:
+- baseRuntimeConfigSchema
+- baseServerSchema
+- baseLoggingSchema
+- logLevelSchema
+- createRuntimeConfigSchema
+- createPartialRuntimeConfigSchema
+
+Constants:
+- baseDefaultConfig
+- defaultConfig
+
+Types:
+- Logger
+- LogEntry
+- LogLevel
+- RuntimeConfig
+- PartialRuntimeConfig
+- BaseRuntimeConfig
+- ToolDefinition
+- ToolInputSchema
+- ToolOutputSchema
+- ToolAnnotations
+- ToolSuccessPayload
+- BaseToolExecutionContext
+- ToolExecutionContext
+- AppErrorCode
+- BaseAppErrorCode
+- TextContentBlock
+- SuccessResult
+- ErrorResult
+
+Security:
+- assertAllowedCommand
+- assertAllowedPath
+- assertFeatureEnabled

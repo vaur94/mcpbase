@@ -2,15 +2,38 @@ import { pathToFileURL } from 'node:url';
 
 import { ApplicationRuntime } from './application/runtime.js';
 import { createExampleTools } from './application/example-tools.js';
+import { ToolRegistry } from './application/tool-registry.js';
+import { baseDefaultConfig, defaultConfig } from './config/default-config.js';
 import { loadConfig } from './config/load-config.js';
+import {
+  baseLoggingSchema,
+  baseRuntimeConfigSchema,
+  baseServerSchema,
+  createPartialRuntimeConfigSchema,
+  createRuntimeConfigSchema,
+  logLevelSchema,
+} from './contracts/runtime-config.js';
+import type {
+  ToolAnnotations,
+  ToolInputSchema,
+  ToolOutputSchema,
+  ToolSuccessPayload,
+} from './contracts/tool-contract.js';
+import type { BaseToolExecutionContext, ToolExecutionContext } from './core/execution-context.js';
+import type { ErrorResult, SuccessResult, TextContentBlock } from './core/result.js';
+import { deepMerge } from './shared/merge.js';
+import { createRequestId } from './shared/request-id.js';
+import { sanitizeMessage } from './shared/text.js';
 import { ensureAppError } from './core/app-error.js';
+import type { Logger, LogEntry, LogLevel } from './logging/logger.js';
 import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
 
 export { ApplicationRuntime } from './application/runtime.js';
 export { createExampleTools } from './application/example-tools.js';
+export { ToolRegistry } from './application/tool-registry.js';
 export { loadConfig } from './config/load-config.js';
-export { AppError } from './core/app-error.js';
+export { ensureAppError } from './core/app-error.js';
 export { createTextContent } from './core/result.js';
 export { StderrLogger } from './logging/stderr-logger.js';
 export {
@@ -18,8 +41,44 @@ export {
   assertAllowedPath,
   assertFeatureEnabled,
 } from './security/guards.js';
-export type { RuntimeConfig } from './contracts/runtime-config.js';
-export type { ToolDefinition } from './contracts/tool-contract.js';
+
+export {
+  baseLoggingSchema,
+  baseRuntimeConfigSchema,
+  baseServerSchema,
+  createPartialRuntimeConfigSchema,
+  createRuntimeConfigSchema,
+  logLevelSchema,
+} from './contracts/runtime-config.js';
+
+export { baseDefaultConfig, defaultConfig } from './config/default-config.js';
+
+export { deepMerge } from './shared/merge.js';
+export { createRequestId } from './shared/request-id.js';
+export { sanitizeMessage } from './shared/text.js';
+
+export type { Logger, LogEntry, LogLevel } from './logging/logger.js';
+
+export type {
+  BaseRuntimeConfig,
+  RuntimeConfig,
+  PartialRuntimeConfig,
+} from './contracts/runtime-config.js';
+
+export type {
+  ToolDefinition,
+  ToolInputSchema,
+  ToolOutputSchema,
+  ToolAnnotations,
+  ToolSuccessPayload,
+} from './contracts/tool-contract.js';
+
+export type { BaseToolExecutionContext, ToolExecutionContext } from './core/execution-context.js';
+
+export type { AppErrorCode, BaseAppErrorCode } from './core/app-error.js';
+export { AppError } from './core/app-error.js';
+
+export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result.js';
 
 export async function bootstrap(argv: string[] = process.argv.slice(2)): Promise<void> {
   const config = await loadConfig(argv);
