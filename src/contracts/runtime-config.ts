@@ -48,6 +48,14 @@ export function createPartialRuntimeConfigSchema<T extends z.ZodRawShape>(
 export type BaseRuntimeConfig<TExtras = unknown> = z.infer<typeof baseRuntimeConfigSchema> &
   TExtras;
 
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends Array<infer U>
+    ? Array<U>
+    : T[K] extends Record<string, unknown>
+      ? DeepPartial<T[K]>
+      : T[K];
+};
+
 const securityExtensionSchema = z.object({
   security: z.object({
     features: z.object({
@@ -64,18 +72,10 @@ const securityExtensionSchema = z.object({
 });
 
 export const runtimeConfigSchema = createRuntimeConfigSchema(securityExtensionSchema);
-export type RuntimeConfig = z.infer<typeof runtimeConfigSchema>;
+export type RuntimeConfig = BaseRuntimeConfig<z.infer<typeof securityExtensionSchema>>;
 
-export const partialRuntimeConfigSchema = z.object({
-  server: runtimeConfigSchema.shape.server.partial().optional(),
-  logging: runtimeConfigSchema.shape.logging.partial().optional(),
-  security: z
-    .object({
-      features: runtimeConfigSchema.shape.security.shape.features.partial().optional(),
-      commands: runtimeConfigSchema.shape.security.shape.commands.partial().optional(),
-      paths: runtimeConfigSchema.shape.security.shape.paths.partial().optional(),
-    })
-    .partial()
-    .optional(),
-});
-export type PartialRuntimeConfig = z.infer<typeof partialRuntimeConfigSchema>;
+export type PartialRuntimeConfig = DeepPartial<BaseRuntimeConfig>;
+export type PartialRuntimeConfigWithSecurity = DeepPartial<RuntimeConfig>;
+
+export const partialRuntimeConfigSchema: z.ZodType<PartialRuntimeConfigWithSecurity> =
+  createPartialRuntimeConfigSchema(securityExtensionSchema);

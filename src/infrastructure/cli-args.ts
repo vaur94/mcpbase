@@ -1,9 +1,10 @@
 import { AppError } from '../core/app-error.js';
 import { logLevelSchema, type PartialRuntimeConfig } from '../contracts/runtime-config.js';
+import { deepMerge } from '../shared/merge.js';
 
-export interface CliParseResult {
+export interface CliParseResult<TOverrides extends Record<string, unknown> = PartialRuntimeConfig> {
   readonly configPath?: string;
-  readonly overrides: PartialRuntimeConfig;
+  readonly overrides: PartialRuntimeConfig & TOverrides;
 }
 
 function expectValue(argv: string[], index: number, flag: string): string {
@@ -27,9 +28,13 @@ function parseBoolean(value: string): boolean {
   throw new AppError('CONFIG_ERROR', `Invalid boolean value: ${value}`);
 }
 
-export function parseCliArgs(argv: string[]): CliParseResult {
+export function parseCliArgs<TOverrides extends Record<string, unknown> = PartialRuntimeConfig>(
+  argv: string[],
+  cliMapper?: (args: string[]) => TOverrides,
+): CliParseResult<TOverrides> {
   const overrides: PartialRuntimeConfig = {};
   let configPath: string | undefined;
+  let unknownArgument: string | undefined;
 
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
@@ -72,73 +77,28 @@ export function parseCliArgs(argv: string[]): CliParseResult {
         index += 1;
         break;
       }
-      case '--enable-server-info-tool': {
-        overrides.security = {
-          ...(overrides.security ?? {}),
-          features: {
-            ...(overrides.security?.features ?? {}),
-            serverInfoTool: true,
-          },
-        };
-        break;
-      }
-      case '--disable-server-info-tool': {
-        overrides.security = {
-          ...(overrides.security ?? {}),
-          features: {
-            ...(overrides.security?.features ?? {}),
-            serverInfoTool: false,
-          },
-        };
-        break;
-      }
-      case '--enable-text-transform-tool': {
-        overrides.security = {
-          ...(overrides.security ?? {}),
-          features: {
-            ...(overrides.security?.features ?? {}),
-            textTransformTool: true,
-          },
-        };
-        break;
-      }
-      case '--disable-text-transform-tool': {
-        overrides.security = {
-          ...(overrides.security ?? {}),
-          features: {
-            ...(overrides.security?.features ?? {}),
-            textTransformTool: false,
-          },
-        };
-        break;
-      }
       default: {
-        if (token.startsWith('--allow-command=')) {
-          const command = token.replace('--allow-command=', '');
-          overrides.security = {
-            ...(overrides.security ?? {}),
-            commands: {
-              allowed: [...(overrides.security?.commands?.allowed ?? []), command],
-            },
-          };
-          break;
-        }
-
-        if (token.startsWith('--allow-path=')) {
-          const path = token.replace('--allow-path=', '');
-          overrides.security = {
-            ...(overrides.security ?? {}),
-            paths: {
-              allowed: [...(overrides.security?.paths?.allowed ?? []), path],
-            },
-          };
-          break;
-        }
-
-        throw new AppError('CONFIG_ERROR', `Unknown argument: ${token}`);
+        unknownArgument = token;
       }
+    }
+
+    if (unknownArgument) {
+      break;
     }
   }
 
-  return { configPath, overrides };
+  const mappedOverrides = cliMapper?.(argv) ?? ({} as TOverrides);
+  const hasMappedOverrides = Object.keys(mappedOverrides).length > 0;
+
+  if (unknownArgument && !hasMappedOverrides) {
+    throw new AppError('CONFIG_ERROR', `Unknown argument: ${unknownArgument}`);
+  }
+
+  return {
+    configPath,
+    overrides: deepMerge(
+      overrides as Record<string, unknown>,
+      mappedOverrides as Record<string, unknown>,
+    ) as PartialRuntimeConfig & TOverrides,
+  };
 }

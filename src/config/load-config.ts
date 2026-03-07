@@ -9,12 +9,15 @@ import {
 import { parseCliArgs } from '../infrastructure/cli-args.js';
 import { fileExists, readJsonFile } from '../infrastructure/json-file.js';
 import { deepMerge } from '../shared/merge.js';
-import { defaultConfig } from './default-config.js';
+import { defaultConfig, baseDefaultConfig } from './default-config.js';
 
-export interface LoadConfigOptions {
+export interface LoadConfigOptions<TConfig extends BaseRuntimeConfig = RuntimeConfig> {
   envPrefix?: string;
   defaultConfigFile?: string;
   argv?: string[];
+  defaults?: DeepPartial<TConfig>;
+  envMapper?: (envPrefix: string) => DeepPartial<TConfig>;
+  cliMapper?: (args: string[]) => DeepPartial<TConfig>;
 }
 
 type DeepPartial<T> = {
@@ -52,11 +55,11 @@ function createPartialConfigSchema<TConfig extends BaseRuntimeConfig>(
   >;
 }
 
-function envName(prefix: string, suffix: string): string {
+export function envName(prefix: string, suffix: string): string {
   return `${prefix}${suffix}`;
 }
 
-function envBoolean(name: string): boolean | undefined {
+export function envBoolean(name: string): boolean | undefined {
   const value = process.env[name];
   if (value === undefined) {
     return undefined;
@@ -73,7 +76,7 @@ function envBoolean(name: string): boolean | undefined {
   throw new AppError('CONFIG_ERROR', `${name} must be either true or false.`);
 }
 
-function envList(name: string): string[] | undefined {
+export function envList(name: string): string[] | undefined {
   const value = process.env[name];
   if (!value) {
     return undefined;
@@ -97,18 +100,6 @@ function loadEnvConfig<TConfig extends BaseRuntimeConfig>(
     logging: {
       level: process.env[envName(envPrefix, 'LOG_LEVEL')],
       includeTimestamp: envBoolean(envName(envPrefix, 'LOGGING_TIMESTAMP')),
-    },
-    security: {
-      features: {
-        serverInfoTool: envBoolean(envName(envPrefix, 'SERVER_INFO_TOOL_ENABLED')),
-        textTransformTool: envBoolean(envName(envPrefix, 'TEXT_TRANSFORM_TOOL_ENABLED')),
-      },
-      commands: {
-        allowed: envList(envName(envPrefix, 'ALLOWED_COMMANDS')),
-      },
-      paths: {
-        allowed: envList(envName(envPrefix, 'ALLOWED_PATHS')),
-      },
     },
   });
 }
@@ -137,23 +128,34 @@ async function loadFileConfig<TConfig extends BaseRuntimeConfig>(
 
 async function loadConfigFromSchema<TConfig extends BaseRuntimeConfig>(
   schema: ZodSchema<TConfig>,
-  options: Required<LoadConfigOptions>,
+  options: ResolvedLoadConfigOptions<TConfig>,
 ): Promise<TConfig> {
   const partialSchema = createPartialConfigSchema(schema);
-  const cli = parseCliArgs(options.argv);
+  const cli = parseCliArgs(options.argv, options.cliMapper);
   const fileConfig = await loadFileConfig(
     partialSchema,
     cli.configPath,
     process.env[envName(options.envPrefix, 'CONFIG')],
     options.defaultConfigFile,
   );
-  const defaultLayer = partialSchema.parse(defaultConfig);
+  const defaultLayer = partialSchema.parse(
+    deepMerge(
+      defaultConfig as Record<string, unknown>,
+      (options.defaults ?? {}) as Record<string, unknown>,
+    ),
+  );
   const cliConfig = partialSchema.parse(cli.overrides);
+  const envConfig = partialSchema.parse(
+    deepMerge(
+      loadEnvConfig(partialSchema, options.envPrefix) as Record<string, unknown>,
+      (options.envMapper?.(options.envPrefix) ?? {}) as Record<string, unknown>,
+    ),
+  );
 
   const merged = deepMerge(
     deepMerge(
       deepMerge(defaultLayer as Record<string, unknown>, fileConfig as Record<string, unknown>),
-      loadEnvConfig(partialSchema, options.envPrefix) as Record<string, unknown>,
+      envConfig as Record<string, unknown>,
     ),
     cliConfig as Record<string, unknown>,
   );
@@ -164,21 +166,37 @@ async function loadConfigFromSchema<TConfig extends BaseRuntimeConfig>(
 export async function loadConfig(argv?: string[]): Promise<RuntimeConfig>;
 export async function loadConfig<TConfig extends BaseRuntimeConfig = RuntimeConfig>(
   schema: ZodSchema<TConfig>,
-  options?: LoadConfigOptions,
+  options?: LoadConfigOptions<TConfig>,
 ): Promise<TConfig>;
 export async function loadConfig<TConfig extends BaseRuntimeConfig = RuntimeConfig>(
   schemaOrArgv?: ZodSchema<TConfig> | string[],
-  options: LoadConfigOptions = {},
+  options: LoadConfigOptions<TConfig> = {},
 ): Promise<TConfig | RuntimeConfig> {
-  const resolvedOptions: Required<LoadConfigOptions> = {
+  const baseResolvedOptions = {
     envPrefix: options.envPrefix ?? 'MCPBASE_',
     defaultConfigFile: options.defaultConfigFile ?? 'mcpbase.config.json',
     argv: Array.isArray(schemaOrArgv) ? schemaOrArgv : (options.argv ?? process.argv.slice(2)),
   };
 
   if (Array.isArray(schemaOrArgv) || schemaOrArgv === undefined) {
-    return loadConfigFromSchema(runtimeConfigSchema, resolvedOptions);
+    return loadConfigFromSchema(runtimeConfigSchema, {
+      ...baseResolvedOptions,
+      defaults: defaultConfig,
+    });
   }
 
-  return loadConfigFromSchema(schemaOrArgv, resolvedOptions);
+  return loadConfigFromSchema(schemaOrArgv, {
+    ...baseResolvedOptions,
+    defaults: options.defaults ?? (baseDefaultConfig as DeepPartial<TConfig>),
+    envMapper: options.envMapper,
+    cliMapper: options.cliMapper,
+  });
 }
+type ResolvedLoadConfigOptions<TConfig extends BaseRuntimeConfig> = {
+  envPrefix: string;
+  defaultConfigFile: string;
+  argv: string[];
+  defaults: DeepPartial<TConfig>;
+  envMapper?: (envPrefix: string) => DeepPartial<TConfig>;
+  cliMapper?: (args: string[]) => DeepPartial<TConfig>;
+};
