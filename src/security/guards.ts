@@ -1,27 +1,38 @@
 import * as path from 'node:path';
 
 import { AppError } from '../core/app-error.js';
-import type { RuntimeConfig } from '../contracts/runtime-config.js';
 
-export type SecurityConfig = RuntimeConfig['security'];
+export interface SecurityConfig<
+  TFeatures extends Record<string, boolean> = Record<string, boolean>,
+> {
+  features: TFeatures;
+  commands: { allowed: string[] };
+  paths: { allowed: string[] };
+}
 
-export function assertFeatureEnabled(
-  security: SecurityConfig,
-  feature: keyof SecurityConfig['features'],
+export function assertFeatureEnabled<TFeatures extends Record<string, boolean>>(
+  security: SecurityConfig<TFeatures>,
+  feature: keyof TFeatures,
 ): void {
   if (!security.features[feature]) {
-    throw new AppError('PERMISSION_DENIED', `Feature is disabled: ${feature}`);
+    throw new AppError('PERMISSION_DENIED', `Feature is disabled: ${String(feature)}`);
   }
 }
 
-export function assertAllowedCommand(security: SecurityConfig, command: string): void {
+export function assertAllowedCommand(
+  security: Pick<SecurityConfig, 'commands'>,
+  command: string,
+): void {
   const baseCommand = command.trim().split(/\s+/u)[0] ?? '';
   if (!security.commands.allowed.includes(baseCommand)) {
     throw new AppError('PERMISSION_DENIED', `Command is not allowed: ${baseCommand}`);
   }
 }
 
-export function assertAllowedPath(security: SecurityConfig, targetPath: string): void {
+export function assertAllowedPath(
+  security: Pick<SecurityConfig, 'paths'>,
+  targetPath: string,
+): void {
   const normalizedTarget = path.resolve(targetPath);
   const allowedRoots = security.paths.allowed.map((value) => path.resolve(value));
 
