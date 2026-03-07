@@ -1,5 +1,7 @@
 import { pathToFileURL } from 'node:url';
 
+import type { ZodSchema } from 'zod';
+
 import { ApplicationRuntime } from './application/runtime.js';
 import { createExampleTools } from './application/example-tools.js';
 import { ToolRegistry } from './application/tool-registry.js';
@@ -12,13 +14,17 @@ import {
   createPartialRuntimeConfigSchema,
   createRuntimeConfigSchema,
   logLevelSchema,
+  runtimeConfigSchema,
 } from './contracts/runtime-config.js';
 import type {
   ToolAnnotations,
+  ToolDefinition,
   ToolInputSchema,
   ToolOutputSchema,
   ToolSuccessPayload,
 } from './contracts/tool-contract.js';
+import type { ExecutionHooks } from './contracts/hooks.js';
+import type { BaseRuntimeConfig } from './contracts/runtime-config.js';
 import type { BaseToolExecutionContext, ToolExecutionContext } from './core/execution-context.js';
 import type { ErrorResult, SuccessResult, TextContentBlock } from './core/result.js';
 import { deepMerge } from './shared/merge.js';
@@ -28,6 +34,19 @@ import { ensureAppError } from './core/app-error.js';
 import type { Logger, LogEntry, LogLevel } from './logging/logger.js';
 import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
+
+export interface BootstrapOptions<
+  TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
+  TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,
+> {
+  configSchema?: ZodSchema<TConfig>;
+  tools?: ToolDefinition<any, any, TContext>[] | (() => ToolDefinition<any, any, TContext>[]);
+  loggerFactory?: (config: TConfig) => Logger;
+  contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
+  hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
+  transport?: 'stdio';
+  argv?: string[];
+}
 
 export { ApplicationRuntime } from './application/runtime.js';
 export type { RuntimeOptions } from './application/runtime.js';
@@ -50,6 +69,7 @@ export {
   createPartialRuntimeConfigSchema,
   createRuntimeConfigSchema,
   logLevelSchema,
+  runtimeConfigSchema,
 } from './contracts/runtime-config.js';
 
 export { baseDefaultConfig, defaultConfig } from './config/default-config.js';
@@ -83,16 +103,38 @@ export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result
 
 export type { ExecutionHooks } from './contracts/hooks.js';
 
-export async function bootstrap(argv: string[] = process.argv.slice(2)): Promise<void> {
-  const config = await loadConfig(argv);
-  const logger = new StderrLogger(config.logging);
-  const runtime = new ApplicationRuntime({ config, logger, tools: createExampleTools() });
-  const server = createMcpServer(runtime);
+export async function bootstrap<
+  TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
+  TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,
+>(options?: BootstrapOptions<TConfig, TContext>): Promise<void> {
+  const schema = (options?.configSchema ?? runtimeConfigSchema) as ZodSchema<TConfig>;
+  const argv = options?.argv ?? process.argv.slice(2);
 
-  await startStdioServer(server);
-  logger.info('MCP stdio server is ready.', {
-    toolName: 'bootstrap',
+  const config = await loadConfig(schema, { argv });
+
+  const logger = options?.loggerFactory
+    ? options.loggerFactory(config)
+    : new StderrLogger((config as BaseRuntimeConfig).logging);
+
+  const rawTools = options?.tools;
+  const tools: ToolDefinition<any, any, TContext>[] = rawTools
+    ? typeof rawTools === 'function'
+      ? rawTools()
+      : rawTools
+    : (createExampleTools() as unknown as ToolDefinition<any, any, TContext>[]);
+
+  const runtime = new ApplicationRuntime<TConfig, TContext>({
+    config,
+    logger,
+    tools,
+    contextFactory: options?.contextFactory,
+    hooks: options?.hooks,
   });
+
+  const server = createMcpServer(runtime);
+  await startStdioServer(server);
+
+  logger.info('MCP stdio server is ready.', { toolName: 'bootstrap' });
 
   const shutdown = (signal: NodeJS.Signals) => {
     logger.info('Shutdown signal received.', { toolName: signal });
