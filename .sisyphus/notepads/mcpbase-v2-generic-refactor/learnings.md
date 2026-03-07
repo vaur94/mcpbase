@@ -68,3 +68,20 @@
 - `PromptCallback` type is exported from `@modelcontextprotocol/sdk/server/mcp.js` — useful for typing static prompt callbacks
 - For template callbacks, inline the callback in the `server.prompt()` call so SDK can infer the `Args` generic from `argsSchema`
 - `PromptTemplateDefinition` interface keeps generic `TArgs` for type safety at definition sites, but register function uses default `z.ZodRawShape`
+
+## Task 15 Learnings (Sampling Client Helper)
+
+- MCP sampling allows server to request LLM completions from the client
+- `server.server.createMessage(params)` is the SDK method for sampling
+- Use `CreateMessageResult` type from `@modelcontextprotocol/sdk/types.js` for response typing
+- The result's `content` is a discriminated union (text/image/audio) — check `content.type === 'text'` before accessing `.text`
+- `maxTokens` is required by the SDK — provide default (e.g., 1024) if not specified
+- `SamplingRequest` interface uses readonly arrays to match SDK conventions
+- Lightweight helper pattern: wrap SDK call, map request/response types, no retry logic
+
+## Task 19 Learnings (Subpath Exports)
+
+- `src/examples/index.ts` re-exports `createExampleTools` from `../application/example-tools.js`
+- `src/security/index.ts` re-exports guards from `../security/guards.js` + exports `PERMISSION_DENIED` const
+- Build produces `dist/examples/index.js` and `dist/security/index.js` as expected
+- Tests pass (5 pre-existing streamable-http test failures unrelated to this task)

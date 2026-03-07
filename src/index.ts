@@ -34,6 +34,7 @@ import { ensureAppError } from './core/app-error.js';
 import type { Logger, LogEntry, LogLevel } from './logging/logger.js';
 import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
+import { startStreamableHttpServer } from './transport/mcp/streamable-http.js';
 
 export interface BootstrapOptions<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
@@ -121,6 +122,9 @@ export { createSamplingHelper } from './capabilities/sampling.js';
 
 export type { Root, RootsChangeHandler, RootsHandler } from './capabilities/roots.js';
 export { createRootsHandler } from './capabilities/roots.js';
+
+export type { StreamableHttpOptions } from './transport/mcp/streamable-http.js';
+export { startStreamableHttpServer } from './transport/mcp/streamable-http.js';
 
 export async function bootstrap<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
