@@ -1,36 +1,18 @@
 # mcpbase
 
-`mcpbase` is a stdio-first reference architecture for future MCP servers. It is meant to be copied, forked, or used as a template when starting a new MCP repository.
+[English](./README.en.md) | [Turkce](./README.tr.md)
 
-## Purpose
+`mcpbase` is the English project guide for the stdio-first MCP base repository. `README.md` is the default English landing page, while this file provides the same guidance as a dedicated language-specific entrypoint.
 
-- standardize MCP server structure
-- provide a reusable tool execution model
-- keep configuration, logging, and security predictable
-- ship with real quality gates for public GitHub and npm publishing
+## Quick Start
 
-## What this is
+Preferred bootstrap path:
 
-- a TypeScript MCP base repository
-- a reference implementation for `initialize`, `tools/list`, and `tools/call`
-- a public-ready foundation for future stdio MCP servers
+```bash
+./scripts/install.sh
+```
 
-## What this is not
-
-- not a domain-specific filesystem, git, or shell server
-- not an HTTP transport implementation
-- not a plugin mega-framework
-
-## Highlights
-
-- layered `src/`, `tests/`, and `docs/` structure
-- `zod` validation for inputs and outputs
-- deny-by-default security helpers
-- structured stderr logging
-- Vitest unit, integration, and protocol tests
-- GitHub Actions, Dependabot, and semantic-release automation
-
-## Quick start
+Manual path:
 
 ```bash
 npm install
@@ -38,22 +20,38 @@ npm run build
 node dist/index.js --config examples/mcpbase.config.json
 ```
 
-## Core docs
+## What You Get
 
-- Turkish landing documentation: `README.tr.md`
+- a reusable TypeScript MCP server foundation
+- a clear runtime pipeline for `initialize`, `tools/list`, and `tools/call`
+- strict validation with `zod`
+- structured stderr logging
+- deny-by-default security helpers
+- public-repository hygiene for GitHub and npm workflows
+
+## Architecture Map
+
+- `src/core` - result and error primitives
+- `src/application` - runtime orchestration and tool registration
+- `src/transport/mcp` - stdio server integration
+- `src/config` - default, file, env, and CLI configuration loading
+- `src/logging` - structured logger implementations
+- `src/security` - permission guards
+- `tests/` - unit, integration, and protocol verification
+
+## Documentation
+
+- Default English landing page: `README.md`
+- Turkish README: `README.tr.md`
 - English docs index: `docs/README.en.md`
-- Architecture overview: `docs/en/architecture/overview.md`
-- Extension model: `docs/en/architecture/extension-model.md`
-- Developer guide: `docs/en/developer-guide/local-development.md`
-- Release process: `docs/en/developer-guide/release-process.md`
+- English architecture docs: `docs/en/architecture/`
+- English developer docs: `docs/en/developer-guide/`
+- Turkish docs tree: `docs/`
 
-## Reference usage
+## When To Use It
 
-1. Copy or fork this repository.
-2. Rename package identity and documentation.
-3. Replace example tools with real domain tools.
-4. Keep the security, testing, CI, and release gates intact.
+Use `mcpbase` when you want to start a new MCP server without rebuilding config loading, logging, validation, security guards, test layout, and release wiring from scratch.
 
 ## License
 
-MIT.
+MIT. See `LICENSE`.
