@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
+import type { BaseRuntimeConfig } from '../../src/contracts/runtime-config.js';
 import type {
   ToolAnnotations,
   ToolDefinition,
@@ -26,7 +27,7 @@ describe('ToolDefinition', () => {
         description: 'Test araci',
         inputSchema: InputSchema,
         outputSchema: OutputSchema,
-        async execute(input, context) {
+        async execute(input, _context) {
           return {
             content: [{ type: 'text', text: `Hello ${input.name}` }],
           };
@@ -37,27 +38,39 @@ describe('ToolDefinition', () => {
       expect(tool.execute).toBeDefined();
     });
 
-    it('ozel TContext parametresi ile calisir', () => {
+    it('ozel TContext parametresi ile calisir', async () => {
       const InputSchema = z.object({ query: z.string() });
 
-      type CustomContext = BaseToolExecutionContext<{
-        server: { name: string; version: string };
-        logging: { level: 'debug' | 'info' | 'warn' | 'error'; includeTimestamp: boolean };
-        security: { features: Record<string, boolean> };
+      type CustomConfig = BaseRuntimeConfig<{
+        storage: { bucket: string };
       }>;
+      type CustomContext = BaseToolExecutionContext<CustomConfig>;
 
       const tool: ToolDefinition<typeof InputSchema, undefined, CustomContext> = {
         name: 'custom_tool',
         title: 'Custom Tool',
         description: 'Ozel context araci',
         inputSchema: InputSchema,
-        async execute(input, context) {
-          expect(context.config.server.name).toBeDefined();
+        async execute(input, _context) {
+          expect(context.config.storage.bucket).toBe('arsiv');
           return { content: [{ type: 'text', text: input.query }] };
         },
       };
 
+      const context: CustomContext = {
+        requestId: 'req-custom',
+        toolName: 'custom_tool',
+        config: {
+          server: { name: 'test-server', version: '1.0.0' },
+          logging: { level: 'info', includeTimestamp: false },
+          storage: { bucket: 'arsiv' },
+        },
+      };
+
       expect(tool.name).toBe('custom_tool');
+      await expect(tool.execute({ query: 'merhaba' }, context)).resolves.toMatchObject({
+        content: [{ type: 'text', text: 'merhaba' }],
+      });
     });
 
     it('TInput ve TOutput tiplerini dogru cikarir', () => {
@@ -70,7 +83,7 @@ describe('ToolDefinition', () => {
         description: 'Tipi test edilen arac',
         inputSchema: InputSchema,
         outputSchema: OutputSchema,
-        async execute(input, context) {
+        async execute(input, _context) {
           return {
             content: [{ type: 'text', text: input.text }],
             structuredContent: { result: input.text },
@@ -99,14 +112,14 @@ describe('ToolDefinition', () => {
             paths: { allowed: [] },
           },
         },
-      } as unknown as ToolExecutionContext;
+      };
 
       const tool: ToolDefinition<typeof InputSchema, undefined> = {
         name: 'test_tool',
         title: 'Test Tool',
         description: 'Test',
         inputSchema: InputSchema,
-        async execute(input, context) {
+        async execute(input, _context) {
           return {
             content: [{ type: 'text', text: String(input.value * 2) }],
           };

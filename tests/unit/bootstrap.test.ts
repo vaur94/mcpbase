@@ -6,7 +6,11 @@ import type { ToolDefinition } from '../../src/contracts/tool-contract.js';
 import type { ExecutionHooks } from '../../src/contracts/hooks.js';
 import type { Logger } from '../../src/logging/logger.js';
 import { createTextContent } from '../../src/core/result.js';
-import { baseRuntimeConfigSchema } from '../../src/contracts/runtime-config.js';
+import {
+  baseRuntimeConfigSchema,
+  createRuntimeConfigSchema,
+  type BaseRuntimeConfig,
+} from '../../src/contracts/runtime-config.js';
 
 // --- Mocks ---
 
@@ -19,6 +23,7 @@ vi.mock('../../src/config/load-config.js', () => ({
 
 vi.mock('../../src/logging/stderr-logger.js', () => {
   const StderrLogger = vi.fn().mockImplementation(() => ({
+    log: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
@@ -40,7 +45,6 @@ vi.mock('../../src/transport/mcp/server.js', () => ({
 }));
 
 // Prevent process.once from actually registering signal handlers in tests
-const originalOnce = process.once.bind(process);
 vi.spyOn(process, 'once').mockImplementation((() => process) as typeof process.once);
 
 import { bootstrap } from '../../src/index.js';
@@ -161,10 +165,14 @@ describe('bootstrap()', () => {
 
   describe('contextFactory entegrasyonu', () => {
     it('contextFactory verildiginde RuntimeOptions icine aktarir', async () => {
+      const baseConfig: BaseRuntimeConfig = {
+        server: { name: 'test-server', version: '0.0.1' },
+        logging: { level: 'error', includeTimestamp: false },
+      };
       const contextFactory = vi.fn().mockReturnValue({
         requestId: 'test',
         toolName: 'test',
-        config: {},
+        config: baseConfig,
       });
 
       await bootstrap({ contextFactory });
@@ -197,11 +205,15 @@ describe('bootstrap()', () => {
         debug: vi.fn(),
       };
 
+      const baseConfig: BaseRuntimeConfig = {
+        server: { name: 'test-server', version: '0.0.1' },
+        logging: { level: 'error', includeTimestamp: false },
+      };
       const hook: ExecutionHooks = { beforeExecute: vi.fn() };
       const contextFactory = vi.fn().mockReturnValue({
         requestId: 'r',
         toolName: 't',
-        config: {},
+        config: baseConfig,
       });
 
       await bootstrap({
@@ -215,6 +227,66 @@ describe('bootstrap()', () => {
       });
 
       expect(createExampleTools).not.toHaveBeenCalled();
+      expect(createMcpServer).toHaveBeenCalled();
+      expect(startStdioServer).toHaveBeenCalled();
+    });
+
+    it('bootstrap generic tipleriyle ozel config ve context kullanir', async () => {
+      const customSchema = createRuntimeConfigSchema(
+        z.object({
+          storage: z.object({ path: z.string().min(1) }),
+        }),
+      );
+      type CustomConfig = BaseRuntimeConfig<{ storage: { path: string } }>;
+      interface CustomContext extends BaseToolExecutionContext<CustomConfig> {
+        readonly tenantId: string;
+      }
+
+      const customConfig: CustomConfig = {
+        server: { name: 'typed-server', version: '1.2.3' },
+        logging: { level: 'info', includeTimestamp: false },
+        storage: { path: '/typed/storage' },
+      };
+      const customTool: ToolDefinition<typeof inputSchema, undefined, CustomContext> = {
+        name: 'typed_tool',
+        title: 'Typed Tool',
+        description: 'Generic bootstrap testi.',
+        inputSchema,
+        async execute(_input, context) {
+          return {
+            content: [createTextContent(`${context.tenantId}:${context.config.storage.path}`)],
+          };
+        },
+      };
+      const customLogger: Logger = {
+        log: vi.fn(),
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      };
+      const contextFactory: BootstrapOptions<CustomConfig, CustomContext>['contextFactory'] = (
+        toolName,
+        requestId,
+        config,
+      ) => ({
+        requestId,
+        toolName,
+        config,
+        tenantId: 'tenant-42',
+      });
+
+      (loadConfig as Mock).mockResolvedValueOnce(customConfig);
+
+      await bootstrap<CustomConfig, CustomContext>({
+        configSchema: customSchema,
+        tools: [customTool],
+        loggerFactory: () => customLogger,
+        contextFactory,
+        argv: [],
+      });
+
+      expect(loadConfig).toHaveBeenCalledWith(customSchema, expect.objectContaining({ argv: [] }));
       expect(createMcpServer).toHaveBeenCalled();
       expect(startStdioServer).toHaveBeenCalled();
     });

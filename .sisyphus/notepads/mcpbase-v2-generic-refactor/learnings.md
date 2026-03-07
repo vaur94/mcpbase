@@ -95,8 +95,49 @@
 - Solution: mock the entire SDK module with `vi.mock()` to avoid hitting real HTTP internals in unit tests
 - The adapter is intentionally thin — no built-in HTTP server, consumer provides their own req/res from Express/Fastify/etc.
 
+## Task 21 Learnings (Generic Type Tests)
+
+- A dedicated `tests/unit/generic-types.test.ts` file is a good place to verify compile-time generic contracts with real object assignments and small runtime assertions, instead of relying only on conditional types.
+- Importing generic APIs from `src/index.ts` in type-level tests verifies both the generic signatures and the public barrel exports in one place.
+- `bootstrap<TConfig, TContext>` is easiest to exercise with explicit generics inside `tests/unit/bootstrap.test.ts`, because that file already mocks transport and config loading side effects.
+- Replacing loose casts in tests (for example `ToolExecutionContext` fixtures) exposes generic regressions earlier and keeps `tsc --noEmit` meaningful for refactor validation.
+- `ToolRegistry<TContext>` coverage is stronger when the test registers a truly custom `ToolDefinition<..., TContext>` instead of relying only on default example tools.
+
 ## Task 18 Learnings (Transport Factory)
 
 - `src/transport/transport-factory.ts` should stay as a pure routing layer: discriminated union in, existing transport starter out
 - Unit tests can mock `../../src/transport/mcp/server.js` and `../../src/transport/mcp/streamable-http.js` directly, which keeps the factory test focused on delegation instead of MCP SDK internals
 - Exporting the factory through `src/index.ts` is enough to make the new API available without changing bootstrap behavior yet
+
+## Task 24 Learnings (API Reference Documentation)
+
+- Package name is `@vaur94/mcpbase` version `2.0.0`
+- Two subpath exports: `@vaur94/mcpbase/examples` and `@vaur94/mcpbase/security`
+- `PERMISSION_DENIED` error code is in security subpath, not main export
+- All generic parameters have defaults: `BaseRuntimeConfig = BaseRuntimeConfig`, `ToolExecutionContext = BaseToolExecutionContext<RuntimeConfig>`
+- Core types: `BaseRuntimeConfig`, `RuntimeConfig`, `AppError`, `ToolDefinition`, `ToolAnnotations`, `ExecutionHooks`
+- Config functions: `createRuntimeConfigSchema`, `createPartialRuntimeConfigSchema`, `loadConfig`
+- Default configs: `baseDefaultConfig` (without security), `defaultConfig` (full with security)
+- Bootstrap: `bootstrap()` function takes `BootstrapOptions` with generic config and context
+- Capabilities: Resources, Prompts, Logging (McpLoggingBridge), Sampling (SamplingHelper), Roots (RootsHandler)
+- Transport: `startStdioServer`, `startStreamableHttpServer`, `createMcpServer`
+- Utilities: `deepMerge`, `createRequestId`, `createTextContent`, `sanitizeMessage`, `ensureAppError`, `StderrLogger`
+- Error codes: `CONFIG_ERROR`, `VALIDATION_ERROR`, `TOOL_NOT_FOUND`, `TOOL_EXECUTION_ERROR`, `PERMISSION_DENIED`
+- Main entry point exports everything except security guards (via subpath)
+
+## Task 23 Learnings (Migration Guide v1 to v2)
+
+- Migration guide created at `docs/en/migration/v1-to-v2.md`
+- All 10 breaking changes documented with before/after code examples:
+  1. Package name: `fork-template` → `@vaur94/mcpbase`
+  2. Peer dependencies: zod and @modelcontextprotocol/sdk now must be installed separately
+  3. RuntimeConfig → BaseRuntimeConfig<TExtras>: security removed from base
+  4. AppError: PERMISSION_DENIED moved to security subpath
+  5. ApplicationRuntime constructor: positional args → options object
+  6. bootstrap(): now accepts BootstrapOptions object
+  7. loadConfig(): now generic, accepts schema parameter
+  8. New capabilities: Resources, Prompts, Logging, Sampling, Roots
+  9. New transport: Streamable HTTP
+  10. Subpath exports: @vaur94/mcpbase/examples and @vaur94/mcpbase/security
+- Quick Start section shows minimal v2 usage pattern
+- Summary table maps v1 APIs to v2 equivalents

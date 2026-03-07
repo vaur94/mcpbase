@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 
 import { createExampleTools } from '../../src/application/example-tools.js';
 import { ToolRegistry } from '../../src/application/tool-registry.js';
+import { createTextContent } from '../../src/core/result.js';
 import type { BaseToolExecutionContext } from '../../src/core/execution-context.js';
 import type { RuntimeConfig } from '../../src/contracts/runtime-config.js';
+import type { ToolDefinition } from '../../src/contracts/tool-contract.js';
+
+const customInputSchema = z.object({ value: z.string() });
 
 describe('ToolRegistry', () => {
   it('retrieves and lists registered tools', () => {
@@ -39,36 +44,70 @@ describe('ToolRegistry', () => {
 
   // Generic tests for TContext
   it('ToolRegistry<TContext> doğru tipli tool kaydeder', () => {
-    interface CustomContext extends BaseToolExecutionContext {
+    interface CustomContext extends BaseToolExecutionContext<RuntimeConfig> {
       readonly customField: string;
     }
 
     const registry = new ToolRegistry<CustomContext>();
+    const customTool: ToolDefinition<typeof customInputSchema, undefined, CustomContext> = {
+      name: 'custom_tool',
+      title: 'Custom Tool',
+      description: 'Ozel context kullanan arac',
+      inputSchema: customInputSchema,
+      async execute(input, context) {
+        return {
+          content: [createTextContent(`${context.customField}:${input.value}`)],
+        };
+      },
+    };
 
-    const tools = createExampleTools();
-    for (const tool of tools) {
-      registry.register(tool);
-    }
+    registry.register(customTool);
 
-    expect(registry.get('server_info').name).toBe('server_info');
-    expect(registry.list()).toHaveLength(2);
+    expect(registry.get('custom_tool').name).toBe('custom_tool');
+    expect(registry.list()).toHaveLength(1);
   });
 
-  it('get() doğru TContext ile döner', () => {
-    interface CustomContext extends BaseToolExecutionContext {
+  it('get() doğru TContext ile döner', async () => {
+    interface CustomContext extends BaseToolExecutionContext<RuntimeConfig> {
       readonly customField: string;
     }
 
     const registry = new ToolRegistry<CustomContext>();
+    const customTool: ToolDefinition<typeof customInputSchema, undefined, CustomContext> = {
+      name: 'custom_tool',
+      title: 'Custom Tool',
+      description: 'Ozel context kullanan arac',
+      inputSchema: customInputSchema,
+      async execute(input, context) {
+        return {
+          content: [createTextContent(`${context.customField}:${input.value}`)],
+        };
+      },
+    };
 
-    const tools = createExampleTools();
-    for (const tool of tools) {
-      registry.register(tool);
-    }
+    registry.register(customTool);
 
-    const tool = registry.get('server_info');
-    expect(tool.name).toBe('server_info');
-    expect(tool.execute).toBeDefined();
+    const tool = registry.get('custom_tool');
+    const result = await tool.execute(
+      { value: 'merhaba' },
+      {
+        requestId: 'req-1',
+        toolName: 'custom_tool',
+        customField: 'tenant-a',
+        config: {
+          server: { name: 'mcpbase', version: '0.1.0' },
+          logging: { level: 'info', includeTimestamp: true },
+          security: {
+            features: { serverInfoTool: true, textTransformTool: true },
+            commands: { allowed: [] },
+            paths: { allowed: [] },
+          },
+        },
+      },
+    );
+
+    expect(tool.name).toBe('custom_tool');
+    expect(result.content[0]?.text).toBe('tenant-a:merhaba');
   });
 
   it('varsayılan TContext ile çalışır (geriye uyumluluk)', () => {
