@@ -11,7 +11,7 @@ import type {
   ToolInputSchema,
   ToolOutputSchema,
 } from './contracts/tool-contract.js';
-import type { ExecutionHooks } from './contracts/hooks.js';
+import type { ExecutionHooks, LifecycleHooks } from './contracts/hooks.js';
 import type { BaseRuntimeConfig } from './contracts/runtime-config.js';
 import type { BaseToolExecutionContext } from './core/execution-context.js';
 import { ensureAppError } from './core/app-error.js';
@@ -31,6 +31,7 @@ export interface BootstrapOptions<
   loggerFactory?: (config: TConfig) => Logger;
   contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
+  lifecycle?: LifecycleHooks<TConfig>;
   telemetry?: TelemetryRecorder;
   transport?: 'stdio';
   argv?: string[];
@@ -41,14 +42,17 @@ export type { RuntimeOptions } from './application/runtime.js';
 export { createExampleTools } from './application/example-tools.js';
 export { ToolRegistry } from './application/tool-registry.js';
 export { loadConfig } from './config/load-config.js';
+export type { LoadConfigOptions } from './config/load-config.js';
+export { envName, envBoolean, envList } from './config/load-config.js';
 export { ensureAppError } from './core/app-error.js';
-export { createTextContent } from './core/result.js';
+export { createTextContent, isErrorResult } from './core/result.js';
 export { StderrLogger } from './logging/stderr-logger.js';
 export {
   assertAllowedCommand,
   assertAllowedPath,
   assertFeatureEnabled,
 } from './security/guards.js';
+export { createSecurityEnforcementHook } from './security/tool-security.js';
 
 export {
   baseLoggingSchema,
@@ -81,6 +85,7 @@ export type {
   ToolAnnotations,
   ToolSuccessPayload,
 } from './contracts/tool-contract.js';
+export type { SecureToolDefinition, ToolSecurityDefinition } from './security/tool-security.js';
 
 export type { BaseToolExecutionContext, ToolExecutionContext } from './core/execution-context.js';
 
@@ -89,7 +94,7 @@ export { AppError } from './core/app-error.js';
 
 export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result.js';
 
-export type { ExecutionHooks } from './contracts/hooks.js';
+export type { ExecutionHooks, LifecycleHooks } from './contracts/hooks.js';
 
 export type {
   TelemetryEvent,
@@ -163,18 +168,48 @@ export async function bootstrap<
     telemetry: options?.telemetry,
   });
 
-  const server = createMcpServer(runtime);
-  await startStdioServer(server);
+  await options?.lifecycle?.onStart?.(config);
+
+  try {
+    const server = createMcpServer(runtime);
+    await startStdioServer(server);
+  } catch (startError) {
+    try {
+      await options?.lifecycle?.onShutdown?.();
+    } catch (shutdownError) {
+      logger.error('Lifecycle onShutdown kancasi baslatma hatasi sirasinda hata verdi.', {
+        errorCode: ensureAppError(shutdownError).code,
+        toolName: 'bootstrap',
+      });
+    }
+
+    throw startError;
+  }
 
   logger.info('MCP stdio server is ready.', { toolName: 'bootstrap' });
 
-  const shutdown = (signal: NodeJS.Signals) => {
+  const shutdown = async (signal: NodeJS.Signals): Promise<void> => {
     logger.info('Shutdown signal received.', { toolName: signal });
+
+    try {
+      await options?.lifecycle?.onShutdown?.();
+    } catch (error) {
+      logger.error('Lifecycle onShutdown kancasi hata verdi.', {
+        errorCode: ensureAppError(error).code,
+        toolName: 'bootstrap',
+      });
+    }
+
     process.exit(0);
   };
 
-  process.once('SIGINT', shutdown);
-  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', () => {
+    void shutdown('SIGINT');
+    process.once('SIGINT', () => process.exit(1));
+  });
+  process.once('SIGTERM', () => {
+    void shutdown('SIGTERM');
+  });
 }
 
 async function main(): Promise<void> {

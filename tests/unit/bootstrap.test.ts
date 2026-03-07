@@ -4,7 +4,7 @@ import { z } from 'zod';
 import type * as RuntimeModule from '../../src/application/runtime.js';
 import type { BaseToolExecutionContext } from '../../src/core/execution-context.js';
 import type { ToolDefinition } from '../../src/contracts/tool-contract.js';
-import type { ExecutionHooks } from '../../src/contracts/hooks.js';
+import type { ExecutionHooks, LifecycleHooks } from '../../src/contracts/hooks.js';
 import type { Logger } from '../../src/logging/logger.js';
 import type { TelemetryRecorder } from '../../src/telemetry/telemetry.js';
 import { createTextContent } from '../../src/core/result.js';
@@ -60,8 +60,30 @@ vi.mock('../../src/application/runtime.js', async (importOriginal) => {
   };
 });
 
-// Prevent process.once from actually registering signal handlers in tests
-vi.spyOn(process, 'once').mockImplementation((() => process) as typeof process.once);
+type SignalHandler = () => void;
+
+const processOnceHandlers = new Map<NodeJS.Signals, SignalHandler[]>();
+const processOnHandlers = new Map<NodeJS.Signals, SignalHandler[]>();
+
+vi.spyOn(process, 'once').mockImplementation(((event, listener) => {
+  if (typeof event === 'string' && (event === 'SIGINT' || event === 'SIGTERM')) {
+    const handlers = processOnceHandlers.get(event) ?? [];
+    handlers.push(listener as SignalHandler);
+    processOnceHandlers.set(event, handlers);
+  }
+
+  return process;
+}) as typeof process.once);
+
+vi.spyOn(process, 'on').mockImplementation(((event, listener) => {
+  if (typeof event === 'string' && (event === 'SIGINT' || event === 'SIGTERM')) {
+    const handlers = processOnHandlers.get(event) ?? [];
+    handlers.push(listener as SignalHandler);
+    processOnHandlers.set(event, handlers);
+  }
+
+  return process;
+}) as typeof process.on);
 
 import { bootstrap } from '../../src/index.js';
 import type { BootstrapOptions } from '../../src/index.js';
@@ -71,6 +93,24 @@ import { createExampleTools } from '../../src/application/example-tools.js';
 import { createMcpServer, startStdioServer } from '../../src/transport/mcp/server.js';
 
 const inputSchema = z.object({ text: z.string() });
+
+function getLastSignalHandler(
+  registry: Map<NodeJS.Signals, SignalHandler[]>,
+  signal: NodeJS.Signals,
+): SignalHandler {
+  const handler = registry.get(signal)?.at(-1);
+
+  if (!handler) {
+    throw new Error(`${signal} icin kayitli handler bulunamadi.`);
+  }
+
+  return handler;
+}
+
+async function flushSignalHandlers(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
 
 function createTestTool(
   name = 'test_tool',
@@ -89,6 +129,8 @@ function createTestTool(
 describe('bootstrap()', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    processOnceHandlers.clear();
+    processOnHandlers.clear();
   });
 
   describe('geriye uyumluluk', () => {
@@ -211,6 +253,119 @@ describe('bootstrap()', () => {
     });
   });
 
+  describe('lifecycle entegrasyonu', () => {
+    it('onStart runtime olustuktan sonra ve transport baslamadan once cagrilir', async () => {
+      const lifecycle: LifecycleHooks = {
+        onStart: vi.fn(),
+      };
+
+      await bootstrap({ lifecycle });
+
+      const runtimeCallOrder = runtimeConstructorSpy.mock.invocationCallOrder[0];
+      const startCallOrder = (lifecycle.onStart as Mock).mock.invocationCallOrder[0];
+      const transportCallOrder = (startStdioServer as Mock).mock.invocationCallOrder[0];
+
+      expect(lifecycle.onStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          server: { name: 'test-server', version: '0.0.1' },
+        }),
+      );
+      expect(runtimeCallOrder).toBeDefined();
+      expect(startCallOrder).toBeDefined();
+      expect(transportCallOrder).toBeDefined();
+
+      if (
+        runtimeCallOrder === undefined ||
+        startCallOrder === undefined ||
+        transportCallOrder === undefined
+      ) {
+        throw new Error('Cagri sirasi kaydedilemedi.');
+      }
+
+      expect(runtimeCallOrder).toBeLessThan(startCallOrder);
+      expect(startCallOrder).toBeLessThan(transportCallOrder);
+    });
+
+    it('SIGINT alindiginda onShutdown cagrilir', async () => {
+      const onShutdown = vi.fn().mockResolvedValue(undefined);
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+
+      await bootstrap({ lifecycle: { onShutdown } });
+
+      const sigintHandler = getLastSignalHandler(processOnceHandlers, 'SIGINT');
+      sigintHandler();
+      await flushSignalHandlers();
+
+      expect(onShutdown).toHaveBeenCalledOnce();
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      exitSpy.mockRestore();
+    });
+
+    it('onStart hata verirse bootstrap reddedilir ve server baslamaz', async () => {
+      const lifecycleError = new Error('baslangic hatasi');
+
+      await expect(
+        bootstrap({
+          lifecycle: {
+            onStart: vi.fn().mockRejectedValue(lifecycleError),
+          },
+        }),
+      ).rejects.toThrow('baslangic hatasi');
+
+      expect(startStdioServer).not.toHaveBeenCalled();
+    });
+
+    it('startStdioServer hata verirse bootstrap reddedilir ve onShutdown cagrilir', async () => {
+      const transportError = new Error('server baslatma hatasi');
+      const onStart = vi.fn().mockResolvedValue(undefined);
+      const onShutdown = vi.fn().mockResolvedValue(undefined);
+
+      (startStdioServer as Mock).mockRejectedValueOnce(transportError);
+
+      await expect(
+        bootstrap({
+          lifecycle: {
+            onStart,
+            onShutdown,
+          },
+        }),
+      ).rejects.toThrow('server baslatma hatasi');
+
+      expect(onStart).toHaveBeenCalledTimes(1);
+      expect(onShutdown).toHaveBeenCalledTimes(1);
+      expect(startStdioServer).toHaveBeenCalled();
+    });
+
+    it('onShutdown hata verirse process yine de cikar', async () => {
+      const logger: Logger = {
+        log: vi.fn(),
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      };
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+
+      await bootstrap({
+        loggerFactory: () => logger,
+        lifecycle: {
+          onShutdown: vi.fn().mockRejectedValue(new Error('kapanis hatasi')),
+        },
+      });
+
+      const sigtermHandler = getLastSignalHandler(processOnceHandlers, 'SIGTERM');
+      sigtermHandler();
+      await flushSignalHandlers();
+
+      expect(logger.error).toHaveBeenCalledWith('Lifecycle onShutdown kancasi hata verdi.', {
+        errorCode: 'TOOL_EXECUTION_ERROR',
+        toolName: 'bootstrap',
+      });
+      expect(exitSpy).toHaveBeenCalledWith(0);
+      exitSpy.mockRestore();
+    });
+  });
+
   describe('tam ozellestirilmis bootstrap', () => {
     it('tum secenekler verildiginde dogru sekilde yapilandirir', async () => {
       const customLogger: Logger = {
@@ -320,6 +475,16 @@ describe('BootstrapOptions tipi', () => {
       transport: 'stdio',
     };
     expect(options.transport).toBe('stdio');
+  });
+
+  it('lifecycle alanini opsiyonel olarak kabul eder', () => {
+    const options: BootstrapOptions = {
+      lifecycle: {
+        onStart: vi.fn(),
+      },
+    };
+
+    expect(options.lifecycle).toBeDefined();
   });
 });
 

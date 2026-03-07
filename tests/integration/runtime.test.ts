@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { ApplicationRuntime } from '../../src/application/runtime.js';
+import { isErrorResult } from '../../src/index.js';
 import { createExampleTools } from '../../src/application/example-tools.js';
 import { StderrLogger } from '../../src/logging/stderr-logger.js';
 import type { BaseRuntimeConfig } from '../../src/contracts/runtime-config.js';
@@ -28,7 +29,10 @@ describe('ApplicationRuntime integration', () => {
     });
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent).toMatchObject({ code: 'TOOL_EXECUTION_ERROR' });
+    if (!isErrorResult(result)) {
+      throw new Error('Hata sonucu bekleniyordu.');
+    }
+    expect(result.error).toMatchObject({ code: 'TOOL_EXECUTION_ERROR' });
   });
 
   it('guvenlik kontrolu olmadan arac calistirir', async () => {
@@ -50,7 +54,7 @@ describe('ApplicationRuntime integration', () => {
       mode: 'trim',
     });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('Hello');
   });
 
@@ -88,7 +92,7 @@ describe('ApplicationRuntime integration', () => {
 
     const result = await runtime.executeTool('integration_tool', { msg: 'test' });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
     expect(result.content[0]?.text).toBe('done');
     expect(capturedContext?.traceId).toMatch(/^trace-/);
     expect(capturedContext?.toolName).toBe('integration_tool');
@@ -115,6 +119,9 @@ describe('ApplicationRuntime integration', () => {
     const result = await runtime.executeTool('failing_tool', {});
 
     expect(result.isError).toBe(true);
-    expect(result.structuredContent).toMatchObject({ code: 'TOOL_EXECUTION_ERROR' });
+    if (!isErrorResult(result)) {
+      throw new Error('Hata sonucu bekleniyordu.');
+    }
+    expect(result.error).toMatchObject({ code: 'TOOL_EXECUTION_ERROR' });
   });
 });

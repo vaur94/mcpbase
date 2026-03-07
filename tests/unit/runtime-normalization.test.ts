@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ApplicationRuntime } from '../../src/application/runtime.js';
+import { isErrorResult } from '../../src/index.js';
 import { createExampleTools } from '../../src/application/example-tools.js';
 import { StderrLogger } from '../../src/logging/stderr-logger.js';
 import { createFixtureConfig } from '../fixtures/runtime-config.js';
@@ -19,7 +20,10 @@ describe('ApplicationRuntime normalization', () => {
       mode: 'uppercase',
     });
 
-    expect(result.isError).toBeUndefined();
+    expect(result.isError).toBe(false);
+    if (isErrorResult(result)) {
+      throw new Error('Basarili sonuc bekleniyordu.');
+    }
     expect(result.content[0]?.type).toBe('text');
     expect(result.content[0]?.text).toBe('HELLO');
     expect(result.structuredContent).toEqual({
