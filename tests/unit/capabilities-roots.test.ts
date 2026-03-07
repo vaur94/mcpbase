@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { Root, RootsChangeHandler, RootsHandler } from '../../src/capabilities/roots.js';
+import type { Root, RootsChangeHandler } from '../../src/capabilities/roots.js';
 import { createRootsHandler } from '../../src/capabilities/roots.js';
 
 describe('Root arayuzu', () => {
@@ -34,7 +34,7 @@ describe('RootsChangeHandler tipi', () => {
   });
 
   it('async fonksiyon olarak kabul edilir', async () => {
-    const handler: RootsChangeHandler = async (roots) => {
+    const handler: RootsChangeHandler = async () => {
       await Promise.resolve();
     };
 

@@ -38,11 +38,11 @@ export function registerPromptTemplates(
 ): void {
   for (const template of templates) {
     if (template.description !== undefined) {
-      server.prompt(template.name, template.description, template.argsSchema, (args, _extra) => ({
+      server.prompt(template.name, template.description, template.argsSchema, (args) => ({
         messages: template.getMessages(args),
       }));
     } else {
-      server.prompt(template.name, template.argsSchema, (args, _extra) => ({
+      server.prompt(template.name, template.argsSchema, (args) => ({
         messages: template.getMessages(args),
       }));
     }

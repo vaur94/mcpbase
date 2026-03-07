@@ -3,7 +3,12 @@ import type { BaseToolExecutionContext } from '../core/execution-context.js';
 import type { ErrorResult, SuccessResult } from '../core/result.js';
 import type { BaseRuntimeConfig } from '../contracts/runtime-config.js';
 import type { ExecutionHooks } from '../contracts/hooks.js';
-import type { ToolDefinition, ToolSuccessPayload } from '../contracts/tool-contract.js';
+import type {
+  ToolDefinition,
+  ToolInputSchema,
+  ToolOutputSchema,
+  ToolSuccessPayload,
+} from '../contracts/tool-contract.js';
 import type { Logger } from '../logging/logger.js';
 import { createRequestId } from '../shared/request-id.js';
 import { ToolRegistry } from './tool-registry.js';
@@ -14,7 +19,7 @@ export interface RuntimeOptions<
 > {
   readonly config: TConfig;
   readonly logger: Logger;
-  readonly tools: ToolDefinition<any, any, TContext>[];
+  readonly tools: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[];
   readonly contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   readonly hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
 }
@@ -97,7 +102,7 @@ export class ApplicationRuntime<
     }
   }
 
-  public listTools(): ToolDefinition<any, any, TContext>[] {
+  public listTools(): ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[] {
     return this.registry.list();
   }
 
@@ -112,7 +117,7 @@ export class ApplicationRuntime<
     const requestId = createRequestId();
     const startedAt = performance.now();
 
-    let tool: ToolDefinition<any, any, TContext> | undefined;
+    let tool: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext> | undefined;
     let context: TContext | undefined;
 
     try {
@@ -170,7 +175,7 @@ export class ApplicationRuntime<
   }
 
   private async runBeforeHooks(
-    tool: ToolDefinition<any, any, TContext>,
+    tool: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>,
     input: unknown,
     context: TContext,
   ): Promise<void> {
@@ -182,7 +187,7 @@ export class ApplicationRuntime<
   }
 
   private async runAfterHooks(
-    tool: ToolDefinition<any, any, TContext>,
+    tool: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>,
     input: unknown,
     result: ToolSuccessPayload,
     context: TContext,
@@ -203,7 +208,7 @@ export class ApplicationRuntime<
   }
 
   private async runOnErrorHooks(
-    tool: ToolDefinition<any, any, TContext>,
+    tool: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>,
     input: unknown,
     error: AppError<BaseAppErrorCode>,
     context: TContext,

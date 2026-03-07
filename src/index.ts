@@ -4,34 +4,18 @@ import type { ZodSchema } from 'zod';
 
 import { ApplicationRuntime } from './application/runtime.js';
 import { createExampleTools } from './application/example-tools.js';
-import { ToolRegistry } from './application/tool-registry.js';
-import { baseDefaultConfig, defaultConfig } from './config/default-config.js';
 import { loadConfig } from './config/load-config.js';
-import {
-  baseLoggingSchema,
-  baseRuntimeConfigSchema,
-  baseServerSchema,
-  createPartialRuntimeConfigSchema,
-  createRuntimeConfigSchema,
-  logLevelSchema,
-  runtimeConfigSchema,
-} from './contracts/runtime-config.js';
+import { runtimeConfigSchema } from './contracts/runtime-config.js';
 import type {
-  ToolAnnotations,
   ToolDefinition,
   ToolInputSchema,
   ToolOutputSchema,
-  ToolSuccessPayload,
 } from './contracts/tool-contract.js';
 import type { ExecutionHooks } from './contracts/hooks.js';
 import type { BaseRuntimeConfig } from './contracts/runtime-config.js';
-import type { BaseToolExecutionContext, ToolExecutionContext } from './core/execution-context.js';
-import type { ErrorResult, SuccessResult, TextContentBlock } from './core/result.js';
-import { deepMerge } from './shared/merge.js';
-import { createRequestId } from './shared/request-id.js';
-import { sanitizeMessage } from './shared/text.js';
+import type { BaseToolExecutionContext } from './core/execution-context.js';
 import { ensureAppError } from './core/app-error.js';
-import type { Logger, LogEntry, LogLevel } from './logging/logger.js';
+import type { Logger } from './logging/logger.js';
 import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
 
@@ -40,7 +24,9 @@ export interface BootstrapOptions<
   TContext extends BaseToolExecutionContext<TConfig> = BaseToolExecutionContext<TConfig>,
 > {
   configSchema?: ZodSchema<TConfig>;
-  tools?: ToolDefinition<any, any, TContext>[] | (() => ToolDefinition<any, any, TContext>[]);
+  tools?:
+    | ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[]
+    | (() => ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[]);
   loggerFactory?: (config: TConfig) => Logger;
   contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
@@ -144,14 +130,18 @@ export async function bootstrap<
 
   const logger = options?.loggerFactory
     ? options.loggerFactory(config)
-    : new StderrLogger((config as BaseRuntimeConfig).logging);
+    : new StderrLogger(config.logging);
 
   const rawTools = options?.tools;
-  const tools: ToolDefinition<any, any, TContext>[] = rawTools
+  const tools: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[] = rawTools
     ? typeof rawTools === 'function'
       ? rawTools()
       : rawTools
-    : (createExampleTools() as unknown as ToolDefinition<any, any, TContext>[]);
+    : (createExampleTools() as unknown as ToolDefinition<
+        ToolInputSchema,
+        ToolOutputSchema | undefined,
+        TContext
+      >[]);
 
   const runtime = new ApplicationRuntime<TConfig, TContext>({
     config,

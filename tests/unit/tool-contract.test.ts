@@ -27,7 +27,7 @@ describe('ToolDefinition', () => {
         description: 'Test araci',
         inputSchema: InputSchema,
         outputSchema: OutputSchema,
-        async execute(input, _context) {
+        async execute(input) {
           return {
             content: [{ type: 'text', text: `Hello ${input.name}` }],
           };
@@ -51,7 +51,7 @@ describe('ToolDefinition', () => {
         title: 'Custom Tool',
         description: 'Ozel context araci',
         inputSchema: InputSchema,
-        async execute(input, _context) {
+        async execute(input) {
           expect(context.config.storage.bucket).toBe('arsiv');
           return { content: [{ type: 'text', text: input.query }] };
         },
@@ -83,7 +83,7 @@ describe('ToolDefinition', () => {
         description: 'Tipi test edilen arac',
         inputSchema: InputSchema,
         outputSchema: OutputSchema,
-        async execute(input, _context) {
+        async execute(input) {
           return {
             content: [{ type: 'text', text: input.text }],
             structuredContent: { result: input.text },
@@ -119,7 +119,7 @@ describe('ToolDefinition', () => {
         title: 'Test Tool',
         description: 'Test',
         inputSchema: InputSchema,
-        async execute(input, _context) {
+        async execute(input) {
           return {
             content: [{ type: 'text', text: String(input.value * 2) }],
           };
@@ -144,7 +144,7 @@ describe('ToolDefinition', () => {
         description: 'Guvenli arac',
         inputSchema: InputSchema,
         security: securityDef,
-        async execute(input, context) {
+        async execute() {
           return { content: [{ type: 'text', text: 'ok' }] };
         },
       };
@@ -159,7 +159,7 @@ describe('ToolDefinition', () => {
         title: 'Open Tool',
         description: 'Acik arac',
         inputSchema: InputSchema,
-        async execute(input, context) {
+        async execute() {
           return { content: [{ type: 'text', text: 'ok' }] };
         },
       };
