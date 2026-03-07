@@ -7,36 +7,52 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const clients: Client[] = [];
 
+function createClient(): Client {
+  const client = new Client({ name: 'mcpbase-test-client', version: '1.0.0' });
+  clients.push(client);
+  return client;
+}
+
+function createTransport(): StdioClientTransport {
+  return new StdioClientTransport({
+    command: process.execPath,
+    args: [path.resolve(process.cwd(), 'dist/index.js')],
+  });
+}
+
 afterEach(async () => {
   await Promise.all(clients.splice(0).map(async (client) => client.close()));
 });
 
 describe('stdio protocol', () => {
-  it('lists tools after the initialize handshake', async () => {
-    const client = new Client({ name: 'mcpbase-test-client', version: '1.0.0' });
-    clients.push(client);
-
-    const transport = new StdioClientTransport({
-      command: process.execPath,
-      args: [path.resolve(process.cwd(), 'dist/index.js')],
-    });
+  it('initialize sonrasi sunucu basariyla baglanti kurar', async () => {
+    const client = createClient();
+    const transport = createTransport();
 
     await client.connect(transport);
 
     const result = await client.listTools();
-    expect(result.tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining(['server_info', 'text_transform']),
-    );
+    expect(result.tools.length).toBeGreaterThanOrEqual(2);
   });
 
-  it('calls the reference tool through tools/call', async () => {
-    const client = new Client({ name: 'mcpbase-test-client', version: '1.0.0' });
-    clients.push(client);
+  it('tools/list kayitli araclari dondurur', async () => {
+    const client = createClient();
+    const transport = createTransport();
 
-    const transport = new StdioClientTransport({
-      command: process.execPath,
-      args: [path.resolve(process.cwd(), 'dist/index.js')],
-    });
+    await client.connect(transport);
+
+    const result = await client.listTools();
+    const toolNames = result.tools.map((tool) => tool.name);
+    expect(toolNames).toEqual(expect.arrayContaining(['server_info', 'text_transform']));
+
+    const textTransform = result.tools.find((t) => t.name === 'text_transform');
+    expect(textTransform).toBeDefined();
+    expect(textTransform?.description).toBeTruthy();
+  });
+
+  it('tools/call araci calistirir ve sonuc dondurur', async () => {
+    const client = createClient();
+    const transport = createTransport();
 
     await client.connect(transport);
 
@@ -64,5 +80,22 @@ describe('stdio protocol', () => {
       transformedText: 'hello world',
       mode: 'lowercase',
     });
+  });
+
+  it('bilinmeyen arac cagrisinda hata dondurur', async () => {
+    const client = createClient();
+    const transport = createTransport();
+
+    await client.connect(transport);
+
+    const result = await client.callTool({
+      name: 'nonexistent_tool',
+      arguments: {},
+    });
+
+    expect(result.isError).toBe(true);
+    const content = result.content as Array<{ type: string; text: string }>;
+    expect(content[0]?.type).toBe('text');
+    expect(content[0]?.text).toBeTruthy();
   });
 });
