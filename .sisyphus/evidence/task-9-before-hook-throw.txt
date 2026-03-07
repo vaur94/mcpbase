@@ -1,0 +1,10 @@
+
+ RUN  v3.2.4 /home/ugur/Projects/local-mcp/mcpbase
+
+ ✓ tests/unit/hooks.test.ts (15 tests | 13 skipped) 9ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 13 skipped (15)
+   Start at  14:25:34
+   Duration  711ms (transform 112ms, setup 0ms, collect 138ms, tests 9ms, environment 0ms, prepare 108ms)
+

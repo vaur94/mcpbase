@@ -81,6 +81,8 @@ export { AppError } from './core/app-error.js';
 
 export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result.js';
 
+export type { ExecutionHooks } from './contracts/hooks.js';
+
 export async function bootstrap(argv: string[] = process.argv.slice(2)): Promise<void> {
   const config = await loadConfig(argv);
   const logger = new StderrLogger(config.logging);
