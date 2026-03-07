@@ -388,6 +388,82 @@ interface ExecutionHooks<TContext extends BaseToolExecutionContext = BaseToolExe
 
 Lifecycle hooks for tool execution. Use for logging, metrics, caching, or custom error handling.
 
+### Telemetry
+
+```typescript
+interface TelemetryEvent {
+  readonly toolName: string;
+  readonly durationMs: number;
+  readonly success: boolean;
+}
+
+interface ToolMetricsSnapshot {
+  readonly toolName: string;
+  readonly callCount: number;
+  readonly errorCount: number;
+  readonly errorRate: number;
+  readonly p95LatencyMs: number;
+}
+
+interface TelemetrySnapshot {
+  readonly tools: ReadonlyMap<string, ToolMetricsSnapshot>;
+  readonly totalCalls: number;
+  readonly totalErrors: number;
+  readonly overallErrorRate: number;
+  readonly overallP95LatencyMs: number;
+}
+
+interface TelemetryRecorder {
+  record(event: TelemetryEvent): void;
+  snapshot(): TelemetrySnapshot;
+}
+
+interface InMemoryTelemetryOptions {
+  readonly maxSamplesPerTool?: number;
+}
+
+function createInMemoryTelemetry(options?: InMemoryTelemetryOptions): TelemetryRecorder;
+```
+
+Optional runtime telemetry for lightweight observability. The built-in implementation keeps bounded in-memory latency samples per tool and exposes aggregate snapshots for call count, error rate, and p95 latency.
+
+**Behavior guarantees:**
+
+- Telemetry is fully opt-in.
+- Consumers that do not pass a telemetry recorder see no behavior change.
+- Recorder failures are swallowed and logged as warnings, so telemetry cannot break tool execution.
+- The in-memory implementation is bounded via `maxSamplesPerTool` to avoid unbounded growth.
+
+**Example:**
+
+```typescript
+import {
+  ApplicationRuntime,
+  createInMemoryTelemetry,
+  loadConfig,
+  runtimeConfigSchema,
+  StderrLogger,
+} from '@vaur94/mcpbase';
+
+const config = await loadConfig(runtimeConfigSchema);
+const telemetry = createInMemoryTelemetry({ maxSamplesPerTool: 500 });
+
+const runtime = new ApplicationRuntime({
+  config,
+  logger: new StderrLogger(config.logging),
+  tools: [myTool],
+  telemetry,
+});
+
+await runtime.executeTool('my_tool', { input: 'hello' });
+
+const snapshot = telemetry.snapshot();
+console.log(snapshot.totalCalls);
+console.log(snapshot.overallErrorRate);
+console.log(snapshot.overallP95LatencyMs);
+console.log(snapshot.tools.get('my_tool')?.p95LatencyMs ?? 0);
+```
+
 ---
 
 ## Bootstrap
@@ -406,6 +482,7 @@ interface BootstrapOptions<TConfig, TContext> {
   loggerFactory?: (config: TConfig) => Logger;
   contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
+  telemetry?: TelemetryRecorder;
   transport?: 'stdio';
   argv?: string[];
 }
@@ -420,6 +497,7 @@ import { bootstrap, createExampleTools } from '@vaur94/mcpbase';
 
 await bootstrap({
   tools: createExampleTools(),
+  telemetry: createInMemoryTelemetry(),
   hooks: {
     afterExecute: async (tool, input, result) => {
       // Log execution metrics
@@ -427,6 +505,8 @@ await bootstrap({
   },
 });
 ```
+
+Telemetry is intentionally passed in as a runtime dependency, not loaded from config. This keeps the feature opt-in and avoids changing existing config files or CLI/env behavior.
 
 ---
 

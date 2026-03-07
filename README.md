@@ -81,6 +81,36 @@ await bootstrap({
 });
 ```
 
+### With built-in telemetry
+
+```typescript
+import { bootstrap, createInMemoryTelemetry } from '@vaur94/mcpbase';
+
+const telemetry = createInMemoryTelemetry({
+  maxSamplesPerTool: 500,
+});
+
+await bootstrap({
+  tools: myTools,
+  telemetry,
+});
+
+setInterval(() => {
+  const snapshot = telemetry.snapshot();
+  const transformMetrics = snapshot.tools.get('text_transform');
+
+  console.error({
+    totalCalls: snapshot.totalCalls,
+    totalErrors: snapshot.totalErrors,
+    overallErrorRate: snapshot.overallErrorRate,
+    overallP95LatencyMs: snapshot.overallP95LatencyMs,
+    textTransformP95LatencyMs: transformMetrics?.p95LatencyMs ?? 0,
+  });
+}, 30_000);
+```
+
+Use this when you want lightweight observability without adding OpenTelemetry, a database, or a background exporter. Telemetry is fully opt-in: if you do not pass `telemetry`, existing behavior stays exactly the same.
+
 ### Streamable HTTP transport
 
 ```typescript
@@ -112,6 +142,8 @@ src/
 ├── application/        # Runtime + registry
 │   ├── runtime.ts          # ApplicationRuntime<TConfig,TContext>
 │   └── tool-registry.ts    # ToolRegistry<TContext>
+├── telemetry/          # Optional in-memory metrics
+│   └── telemetry.ts        # createInMemoryTelemetry, TelemetryRecorder
 ├── config/             # Config loading
 │   └── load-config.ts      # loadConfig<TConfig>(schema, options?)
 ├── capabilities/       # MCP capability modules
@@ -223,6 +255,34 @@ import {
 } from '@vaur94/mcpbase/security';
 ```
 
+### 8. Add telemetry only when you need it
+
+```typescript
+import { bootstrap, createInMemoryTelemetry, type TelemetryRecorder } from '@vaur94/mcpbase';
+
+const telemetry: TelemetryRecorder = createInMemoryTelemetry({
+  maxSamplesPerTool: 1000,
+});
+
+await bootstrap<MyConfig, MyContext>({
+  configSchema: myConfigSchema,
+  tools: myTools,
+  telemetry,
+  contextFactory: (toolName, requestId, config) => ({
+    requestId,
+    toolName,
+    config,
+    storage: new StorageManager(config.storage.rootPath),
+  }),
+});
+
+const snapshot = telemetry.snapshot();
+console.error('Current error rate:', snapshot.overallErrorRate);
+console.error('Current p95 latency:', snapshot.overallP95LatencyMs);
+```
+
+This keeps telemetry outside your tool logic. No config migration, no transport changes, and no behavior change for users who do not opt in.
+
 ---
 
 ## 📚 Documentation
@@ -239,7 +299,7 @@ import {
 
 ```bash
 npm run ci:check      # format + lint + typecheck + coverage + build
-npm run test          # unit tests (202 tests, 25 files)
+npm run test          # unit tests (225 tests, 26 files)
 npm run test:protocol # stdio protocol tests (4 tests)
 npm run test:coverage # coverage report (90%+ thresholds)
 npm run build         # produces dist/ with 3 entry points

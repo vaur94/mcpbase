@@ -10,6 +10,7 @@ import type {
   ToolSuccessPayload,
 } from '../contracts/tool-contract.js';
 import type { Logger } from '../logging/logger.js';
+import type { TelemetryEvent, TelemetryRecorder } from '../telemetry/telemetry.js';
 import { createRequestId } from '../shared/request-id.js';
 import { ToolRegistry } from './tool-registry.js';
 
@@ -22,6 +23,7 @@ export interface RuntimeOptions<
   readonly tools: ToolDefinition<ToolInputSchema, ToolOutputSchema | undefined, TContext>[];
   readonly contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   readonly hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
+  readonly telemetry?: TelemetryRecorder;
 }
 
 function createSuccessResult(
@@ -89,6 +91,7 @@ export class ApplicationRuntime<
   private readonly logger: Logger;
   private readonly createContext: (toolName: string, requestId: string) => TContext;
   readonly #hooks: readonly ExecutionHooks<TContext>[];
+  readonly #telemetry: TelemetryRecorder | undefined;
 
   public constructor(options: RuntimeOptions<TConfig, TContext>) {
     this.config = options.config;
@@ -96,6 +99,7 @@ export class ApplicationRuntime<
     const factory = options.contextFactory ?? defaultContextFactory;
     this.createContext = (toolName, requestId) => factory(toolName, requestId, this.config);
     this.#hooks = normalizeHooks<TContext>(options.hooks);
+    this.#telemetry = options.telemetry;
     this.registry = new ToolRegistry<TContext>();
     for (const tool of options.tools) {
       this.registry.register(tool);
@@ -135,6 +139,7 @@ export class ApplicationRuntime<
       await this.runAfterHooks(tool, input, payload, context);
 
       const durationMs = Math.round(performance.now() - startedAt);
+      this.recordTelemetry({ toolName: tool.name, durationMs, success: true });
       const result = createSuccessResult(tool.name, requestId, durationMs, payload);
       this.logger.info('Tool execution completed successfully.', {
         requestId,
@@ -149,6 +154,7 @@ export class ApplicationRuntime<
     } catch (error) {
       const appError = ensureAppError<BaseAppErrorCode>(error);
       const durationMs = Math.round(performance.now() - startedAt);
+      this.recordTelemetry({ toolName: name, durationMs, success: false });
 
       if (tool) {
         const errorContext = context ?? this.createContext(name, requestId);
@@ -171,6 +177,19 @@ export class ApplicationRuntime<
           message: result.error.message,
         },
       };
+    }
+  }
+
+  private recordTelemetry(event: TelemetryEvent): void {
+    if (!this.#telemetry) return;
+    try {
+      this.#telemetry.record(event);
+    } catch (telemetryError) {
+      this.logger.warn('Telemetry recording failed.', {
+        toolName: event.toolName,
+        errorCode:
+          telemetryError instanceof Error ? telemetryError.message : 'Unknown telemetry error',
+      });
     }
   }
 

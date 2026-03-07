@@ -9,6 +9,7 @@ import type { BaseRuntimeConfig } from '../../src/contracts/runtime-config.js';
 import type { BaseToolExecutionContext } from '../../src/core/execution-context.js';
 import type { ToolDefinition } from '../../src/contracts/tool-contract.js';
 import { createTextContent } from '../../src/core/result.js';
+import { createInMemoryTelemetry, type TelemetryRecorder } from '../../src/telemetry/telemetry.js';
 import { createBaseFixtureConfig, createFixtureConfig } from '../fixtures/runtime-config.js';
 
 function createTestLogger() {
@@ -261,5 +262,168 @@ describe('ApplicationRuntime generic tipler', () => {
 
     const runtime = new ApplicationRuntime(options);
     expect(runtime).toBeDefined();
+  });
+});
+
+describe('ApplicationRuntime telemetri entegrasyonu', () => {
+  it('basarili arac cagrisini telemetriye kaydeder', async () => {
+    const telemetry = createInMemoryTelemetry();
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: createTestLogger(),
+      tools: createExampleTools(),
+      telemetry,
+    });
+
+    await runtime.executeTool('text_transform', { text: 'Hello', mode: 'uppercase' });
+
+    const snap = telemetry.snapshot();
+    expect(snap.totalCalls).toBe(1);
+    expect(snap.totalErrors).toBe(0);
+    const metrics = snap.tools.get('text_transform');
+    expect(metrics?.callCount).toBe(1);
+    expect(metrics?.errorCount).toBe(0);
+    expect(metrics?.p95LatencyMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('bulunamayan arac hatasini telemetriye kaydeder', async () => {
+    const telemetry = createInMemoryTelemetry();
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: createTestLogger(),
+      tools: createExampleTools(),
+      telemetry,
+    });
+
+    await runtime.executeTool('nonexistent_tool', {});
+
+    const snap = telemetry.snapshot();
+    expect(snap.totalCalls).toBe(1);
+    expect(snap.totalErrors).toBe(1);
+    const metrics = snap.tools.get('nonexistent_tool');
+    expect(metrics?.callCount).toBe(1);
+    expect(metrics?.errorCount).toBe(1);
+    expect(metrics?.errorRate).toBe(1);
+  });
+
+  it('dogrulama hatasini telemetriye kaydeder', async () => {
+    const telemetry = createInMemoryTelemetry();
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: createTestLogger(),
+      tools: createExampleTools(),
+      telemetry,
+    });
+
+    await runtime.executeTool('text_transform', { text: '', mode: 'uppercase' });
+
+    const snap = telemetry.snapshot();
+    expect(snap.totalCalls).toBe(1);
+    expect(snap.totalErrors).toBe(1);
+    expect(snap.tools.get('text_transform')?.errorCount).toBe(1);
+  });
+
+  it('telemetri verilmezse mevcut davranis degismez', async () => {
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: createTestLogger(),
+      tools: createExampleTools(),
+    });
+
+    const result = await runtime.executeTool('text_transform', { text: 'Hi', mode: 'uppercase' });
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0]?.text).toBe('HI');
+  });
+
+  it('basari ve hata karisik cagrilarda hata oranini dogru hesaplar', async () => {
+    const telemetry = createInMemoryTelemetry();
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger: createTestLogger(),
+      tools: createExampleTools(),
+      telemetry,
+    });
+
+    await runtime.executeTool('text_transform', { text: 'a', mode: 'uppercase' });
+    await runtime.executeTool('text_transform', { text: 'b', mode: 'lowercase' });
+    await runtime.executeTool('nonexistent_tool', {});
+    await runtime.executeTool('text_transform', { text: '', mode: 'uppercase' });
+
+    const snap = telemetry.snapshot();
+    expect(snap.totalCalls).toBe(4);
+    expect(snap.totalErrors).toBe(2);
+    expect(snap.overallErrorRate).toBe(0.5);
+  });
+
+  it('telemetri kaydedici hata firlatirsa basarili arac cagrisi etkilenmez', async () => {
+    const throwingRecorder: TelemetryRecorder = {
+      record() {
+        throw new Error('recorder patladı');
+      },
+      snapshot() {
+        return {
+          tools: new Map(),
+          totalCalls: 0,
+          totalErrors: 0,
+          overallErrorRate: 0,
+          overallP95LatencyMs: 0,
+        };
+      },
+    };
+
+    const logger = createTestLogger();
+    const warnSpy = vi.spyOn(logger, 'warn');
+
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger,
+      tools: createExampleTools(),
+      telemetry: throwingRecorder,
+    });
+
+    const result = await runtime.executeTool('text_transform', { text: 'Hi', mode: 'uppercase' });
+
+    expect(result.isError).toBeUndefined();
+    expect(result.content[0]?.text).toBe('HI');
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Telemetry recording failed.',
+      expect.objectContaining({ toolName: 'text_transform' }),
+    );
+  });
+
+  it('telemetri kaydedici hata firlatirsa hata yolunda da arac sonucu etkilenmez', async () => {
+    const throwingRecorder: TelemetryRecorder = {
+      record() {
+        throw new Error('recorder patladı');
+      },
+      snapshot() {
+        return {
+          tools: new Map(),
+          totalCalls: 0,
+          totalErrors: 0,
+          overallErrorRate: 0,
+          overallP95LatencyMs: 0,
+        };
+      },
+    };
+
+    const logger = createTestLogger();
+    const warnSpy = vi.spyOn(logger, 'warn');
+
+    const runtime = new ApplicationRuntime({
+      config: createFixtureConfig(),
+      logger,
+      tools: createExampleTools(),
+      telemetry: throwingRecorder,
+    });
+
+    const result = await runtime.executeTool('nonexistent_tool', {});
+
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({ code: 'TOOL_NOT_FOUND' });
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Telemetry recording failed.',
+      expect.objectContaining({ toolName: 'nonexistent_tool' }),
+    );
   });
 });

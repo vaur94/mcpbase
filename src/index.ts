@@ -16,6 +16,7 @@ import type { BaseRuntimeConfig } from './contracts/runtime-config.js';
 import type { BaseToolExecutionContext } from './core/execution-context.js';
 import { ensureAppError } from './core/app-error.js';
 import type { Logger } from './logging/logger.js';
+import type { TelemetryRecorder } from './telemetry/telemetry.js';
 import { StderrLogger } from './logging/stderr-logger.js';
 import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
 
@@ -30,6 +31,7 @@ export interface BootstrapOptions<
   loggerFactory?: (config: TConfig) => Logger;
   contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
+  telemetry?: TelemetryRecorder;
   transport?: 'stdio';
   argv?: string[];
 }
@@ -88,6 +90,15 @@ export { AppError } from './core/app-error.js';
 export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result.js';
 
 export type { ExecutionHooks } from './contracts/hooks.js';
+
+export type {
+  TelemetryEvent,
+  TelemetryRecorder,
+  TelemetrySnapshot,
+  ToolMetricsSnapshot,
+  InMemoryTelemetryOptions,
+} from './telemetry/telemetry.js';
+export { createInMemoryTelemetry } from './telemetry/telemetry.js';
 
 export type { ResourceDefinition, ResourceTemplateDefinition } from './capabilities/resources.js';
 export { registerResources, registerResourceTemplates } from './capabilities/resources.js';
@@ -149,6 +160,7 @@ export async function bootstrap<
     tools,
     contextFactory: options?.contextFactory,
     hooks: options?.hooks,
+    telemetry: options?.telemetry,
   });
 
   const server = createMcpServer(runtime);

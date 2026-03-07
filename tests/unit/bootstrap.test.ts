@@ -1,10 +1,12 @@
 import { describe, expect, it, vi, beforeEach, type Mock } from 'vitest';
 import { z } from 'zod';
 
+import type * as RuntimeModule from '../../src/application/runtime.js';
 import type { BaseToolExecutionContext } from '../../src/core/execution-context.js';
 import type { ToolDefinition } from '../../src/contracts/tool-contract.js';
 import type { ExecutionHooks } from '../../src/contracts/hooks.js';
 import type { Logger } from '../../src/logging/logger.js';
+import type { TelemetryRecorder } from '../../src/telemetry/telemetry.js';
 import { createTextContent } from '../../src/core/result.js';
 import {
   baseRuntimeConfigSchema,
@@ -43,6 +45,20 @@ vi.mock('../../src/transport/mcp/server.js', () => ({
   }),
   startStdioServer: vi.fn().mockResolvedValue({}),
 }));
+
+const runtimeConstructorSpy = vi.fn();
+vi.mock('../../src/application/runtime.js', async (importOriginal) => {
+  const original = await importOriginal<typeof RuntimeModule>();
+  return {
+    ...original,
+    ApplicationRuntime: class extends original.ApplicationRuntime {
+      constructor(options: unknown) {
+        super(options as ConstructorParameters<typeof original.ApplicationRuntime>[0]);
+        runtimeConstructorSpy(options);
+      }
+    },
+  };
+});
 
 // Prevent process.once from actually registering signal handlers in tests
 vi.spyOn(process, 'once').mockImplementation((() => process) as typeof process.once);
@@ -295,16 +311,47 @@ describe('bootstrap()', () => {
 
 describe('BootstrapOptions tipi', () => {
   it('tum alanlar opsiyoneldir', () => {
-    // Type-level test: empty options should compile
     const options: BootstrapOptions = {};
     expect(options).toBeDefined();
   });
 
   it('varsayilan generic parametreler BaseRuntimeConfig ve BaseToolExecutionContext kullanir', () => {
-    // Type-level test: default generics compile without explicit types
     const options: BootstrapOptions = {
       transport: 'stdio',
     };
     expect(options.transport).toBe('stdio');
+  });
+});
+
+describe('bootstrap telemetri entegrasyonu', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('telemetri verildiginde ApplicationRuntime a aktarir', async () => {
+    const telemetry: TelemetryRecorder = {
+      record: vi.fn(),
+      snapshot: vi.fn().mockReturnValue({
+        tools: new Map(),
+        totalCalls: 0,
+        totalErrors: 0,
+        overallErrorRate: 0,
+        overallP95LatencyMs: 0,
+      }),
+    };
+
+    await bootstrap({ telemetry });
+
+    expect(runtimeConstructorSpy).toHaveBeenCalledWith(expect.objectContaining({ telemetry }));
+  });
+
+  it('telemetri verilmezse mevcut davranis degismez', async () => {
+    await bootstrap();
+
+    expect(runtimeConstructorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ telemetry: undefined }),
+    );
+    expect(createMcpServer).toHaveBeenCalled();
+    expect(startStdioServer).toHaveBeenCalled();
   });
 });

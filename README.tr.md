@@ -81,6 +81,36 @@ await bootstrap({
 });
 ```
 
+### Dahili telemetri ile
+
+```typescript
+import { bootstrap, createInMemoryTelemetry } from '@vaur94/mcpbase';
+
+const telemetry = createInMemoryTelemetry({
+  maxSamplesPerTool: 500,
+});
+
+await bootstrap({
+  tools: araçlarım,
+  telemetry,
+});
+
+setInterval(() => {
+  const snapshot = telemetry.snapshot();
+  const transformMetrics = snapshot.tools.get('text_transform');
+
+  console.error({
+    totalCalls: snapshot.totalCalls,
+    totalErrors: snapshot.totalErrors,
+    overallErrorRate: snapshot.overallErrorRate,
+    overallP95LatencyMs: snapshot.overallP95LatencyMs,
+    textTransformP95LatencyMs: transformMetrics?.p95LatencyMs ?? 0,
+  });
+}, 30_000);
+```
+
+Bu yaklaşım OpenTelemetry, veritabanı veya arka plan exporter eklemeden hafif gözlemlenebilirlik sağlar. Telemetri tamamen opsiyoneldir: `telemetry` vermezsen mevcut davranış aynen korunur.
+
 ### Streamable HTTP transport
 
 ```typescript
@@ -112,6 +142,8 @@ src/
 ├── application/        # Runtime + registry
 │   ├── runtime.ts          # ApplicationRuntime<TConfig,TContext>
 │   └── tool-registry.ts    # ToolRegistry<TContext>
+├── telemetry/          # Opsiyonel in-memory metrikler
+│   └── telemetry.ts        # createInMemoryTelemetry, TelemetryRecorder
 ├── config/             # Config yükleme
 │   └── load-config.ts      # loadConfig<TConfig>(schema, options?)
 ├── capabilities/       # MCP capability modülleri
@@ -223,6 +255,34 @@ import {
 } from '@vaur94/mcpbase/security';
 ```
 
+### 8. Gerekirse telemetri ekle
+
+```typescript
+import { bootstrap, createInMemoryTelemetry, type TelemetryRecorder } from '@vaur94/mcpbase';
+
+const telemetry: TelemetryRecorder = createInMemoryTelemetry({
+  maxSamplesPerTool: 1000,
+});
+
+await bootstrap<BenimConfigum, BenimContextim>({
+  configSchema: benimConfigSchema,
+  tools: araçlarım,
+  telemetry,
+  contextFactory: (toolName, requestId, config) => ({
+    requestId,
+    toolName,
+    config,
+    depolama: new DepolamaYoneticisi(config.depolama.kokYol),
+  }),
+});
+
+const snapshot = telemetry.snapshot();
+console.error('Güncel hata oranı:', snapshot.overallErrorRate);
+console.error('Güncel p95 gecikme:', snapshot.overallP95LatencyMs);
+```
+
+Bu sayede telemetri tool mantığının dışında kalır. Config migration gerekmez, transport değişmez, opt-in olmayan kullanıcılar etkilenmez.
+
 ---
 
 ## 📚 Dokümantasyon
@@ -239,7 +299,7 @@ import {
 
 ```bash
 npm run ci:check      # format + lint + typecheck + coverage + build
-npm run test          # birim testler (202 test, 25 dosya)
+npm run test          # birim testler (225 test, 26 dosya)
 npm run test:protocol # stdio protokol testleri (4 test)
 npm run test:coverage # coverage raporu (%90+ eşikler)
 npm run build         # dist/ üretir (3 entry point)
