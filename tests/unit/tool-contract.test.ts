@@ -7,7 +7,6 @@ import type {
   ToolDefinition,
   ToolInputSchema,
   ToolOutputSchema,
-  ToolSecurityDefinition,
   ToolSuccessPayload,
 } from '../../src/contracts/tool-contract.js';
 import type {
@@ -128,43 +127,6 @@ describe('ToolDefinition', () => {
 
       const result = await tool.execute({ value: 21 }, mockContext);
       expect(result.content[0]?.text).toBe('42');
-    });
-  });
-
-  describe('guvenlik tanimi', () => {
-    it('ToolSecurityDefinition ile calisir', () => {
-      const securityDef: ToolSecurityDefinition = {
-        requiredFeature: 'serverInfoTool',
-      };
-
-      const InputSchema = z.object({});
-      const tool: ToolDefinition<typeof InputSchema, undefined> = {
-        name: 'secure_tool',
-        title: 'Secure Tool',
-        description: 'Guvenli arac',
-        inputSchema: InputSchema,
-        security: securityDef,
-        async execute() {
-          return { content: [{ type: 'text', text: 'ok' }] };
-        },
-      };
-
-      expect(tool.security?.requiredFeature).toBe('serverInfoTool');
-    });
-
-    it('guvenlik opsiyonel olabilir', () => {
-      const InputSchema = z.object({});
-      const tool: ToolDefinition<typeof InputSchema, undefined> = {
-        name: 'open_tool',
-        title: 'Open Tool',
-        description: 'Acik arac',
-        inputSchema: InputSchema,
-        async execute() {
-          return { content: [{ type: 'text', text: 'ok' }] };
-        },
-      };
-
-      expect(tool.security).toBeUndefined();
     });
   });
 });
