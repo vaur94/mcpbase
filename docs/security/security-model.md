@@ -1,18 +1,29 @@
 # Guvenlik Modeli
 
-## Deny-by-default
+English version: [docs/en/security/security-model.md](../en/security/security-model.md)
 
-`mcpbase`, risk tasiyan davranislarin acik izin olmadan kullanilmamasini hedefler. Bu nedenle feature flag, command allowlist ve path allowlist yardimcilari birlikte sunulur.
+## Deny-by-default yaklasimi
 
-## Guard felsefesi
+`mcpbase`, riskli davranislari acik izin olmadan kullanmamayi hedefler. Bu nedenle security yardimcilari feature flag, command allowlist ve path allowlist kalibini birlikte sunar.
 
-- feature flag: bir arac veya yetenek acik mi
-- command restriction: hangi komutlara izin veriliyor
-- path restriction: hangi kok altinda calisilabilir
+## Dogrudan yardimcilar
 
-## Guvenli extension kurallari
+- `assertFeatureEnabled`
+- `assertAllowedCommand`
+- `assertAllowedPath`
+- `createSecurityEnforcementHook`
 
-- shell veya dosya araclari ekleniyorsa guard zorunludur
-- yeni config alanlari dokumansiz eklenmez
-- hata durumlarinda sessizce devam edilmez
-- log'lar yalnizca stderr uzerinden akar
+## Guvenli gelistirme kurallari
+
+- Dosya sistemi veya komut calistiran araclar guard ile korunmalidir.
+- Yeni config alanlari belge ve test olmadan eklenmemelidir.
+- MCP loglari stderr uzerinden kalmalidir.
+- Runtime ve security davranisi degistiginde unit ve integration testleri birlikte gozden gecirilmelidir.
+
+## Ilgili kaynaklar
+
+- `src/security/guards.ts`
+- `src/security/tool-security.ts`
+- `SECURITY.tr.md`
+
+Son guncelleme: 2026-03-11

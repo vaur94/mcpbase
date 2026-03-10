@@ -25,6 +25,11 @@
       "import": "./dist/security/index.js",
       "default": "./dist/security/index.js"
     },
+    "./hub": {
+      "types": "./dist/hub/index.d.ts",
+      "import": "./dist/hub/index.js",
+      "default": "./dist/hub/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -1,22 +1,26 @@
 # Katki Rehberi
 
-## Beklenen akis
+[English](./CONTRIBUTING.md) | Turkce
 
-1. Kucuk ve anlamli degisiklikler yapin.
-2. `npm run ci:check` komutunu gecmeden PR acmayin.
-3. Conventional commit mesajlarini kullanin.
-4. Yeni arac ekliyorsaniz ilgili dokumani ve testleri ayni PR icinde tamamlayin.
+## Akis
 
-## Ne beklenir
+1. Bagimliliklari `./scripts/install.sh` ile kurun veya `npm install` ve `npm run build` calistirin.
+2. Degisiklikleri kucuk, odakli ve repo kalibina uygun tutun.
+3. Once ilgili dar test komutunu, en sonda `npm run ci:check` komutunu calistirin.
+4. Davranis, komut veya public API degistiginde Turkce ve English belgeleri birlikte guncelleyin.
+5. Conventional commit gecmisi ve net bir dogrulama ozeti ile pull request acin.
 
-- placeholder birakilmaz
-- TODO birakilmaz
-- kritik akislarda testsiz degisiklik kabul edilmez
-- stdout yalnizca MCP protokolu icin kullanilir
+## Beklentiler
 
-## Inceleme odaklari
+- Uygun yerlerde `.js` uzantili ESM importlarini koruyun.
+- MCP loglari icin stdout kullanmayin.
+- Kritik runtime, transport, security veya config davranislarinda test ekleyin ya da guncelleyin.
+- Kok belgeleri, docs sayfalari ve ornekleri `package.json`, workflow'lar ve source export'lariyla uyumlu tutun.
 
-- katman sinirlari korunuyor mu
-- yeni config alanlari dokumante edildi mi
-- guvenlik guard ihtiyaci dogru ele alindi mi
-- release ve CI akisi etkileniyor mu
+## Inceleme sinyalleri
+
+- `CODEOWNERS`, repo sahipligini su anda `@vaur94` kullanicisina yonlendiriyor.
+- Kalite kapilari `.github/workflows/ci.yml` ve `package.json` icinde tanimlidir.
+- Dokumantasyon degisiklikleri pull request icinde etkilenen sayfalari acikca belirtmelidir.
+
+Son guncelleme: 2026-03-11

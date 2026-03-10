@@ -6,6 +6,8 @@ import { ApplicationRuntime } from './application/runtime.js';
 import { createExampleTools } from './application/example-tools.js';
 import { loadConfig } from './config/load-config.js';
 import { runtimeConfigSchema } from './contracts/runtime-config.js';
+import { createIntrospectionTool, type IntrospectionOptions } from './hub/introspection.js';
+import { MCPBASE_VERSION } from './hub/version.js';
 import type {
   ToolDefinition,
   ToolInputSchema,
@@ -15,10 +17,11 @@ import type { ExecutionHooks, LifecycleHooks } from './contracts/hooks.js';
 import type { BaseRuntimeConfig } from './contracts/runtime-config.js';
 import type { BaseToolExecutionContext } from './core/execution-context.js';
 import { ensureAppError } from './core/app-error.js';
+import type { ToolStateManager } from './hub/tool-state.js';
 import type { Logger } from './logging/logger.js';
 import type { TelemetryRecorder } from './telemetry/telemetry.js';
 import { StderrLogger } from './logging/stderr-logger.js';
-import { createMcpServer, startStdioServer } from './transport/mcp/server.js';
+import { createManagedMcpServer, startStdioServer } from './transport/mcp/server.js';
 
 export interface BootstrapOptions<
   TConfig extends BaseRuntimeConfig = BaseRuntimeConfig,
@@ -33,6 +36,8 @@ export interface BootstrapOptions<
   hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
   lifecycle?: LifecycleHooks<TConfig>;
   telemetry?: TelemetryRecorder;
+  stateManager?: ToolStateManager;
+  introspection?: boolean | IntrospectionOptions;
   transport?: 'stdio';
   argv?: string[];
 }
@@ -53,18 +58,20 @@ export {
   assertFeatureEnabled,
 } from './security/guards.js';
 export { createSecurityEnforcementHook } from './security/tool-security.js';
-
 export {
   baseLoggingSchema,
   baseRuntimeConfigSchema,
+  baseSecuritySchema,
   baseServerSchema,
+  createSecurityConfigSchema,
+  createSecuredRuntimeConfigSchema,
   createPartialRuntimeConfigSchema,
   createRuntimeConfigSchema,
   logLevelSchema,
   runtimeConfigSchema,
 } from './contracts/runtime-config.js';
 
-export { baseDefaultConfig, defaultConfig } from './config/default-config.js';
+export { baseDefaultConfig, baseSecurityDefaults, defaultConfig } from './config/default-config.js';
 
 export { deepMerge } from './shared/merge.js';
 export { createRequestId } from './shared/request-id.js';
@@ -91,6 +98,8 @@ export type { BaseToolExecutionContext, ToolExecutionContext } from './core/exec
 
 export type { AppErrorCode, BaseAppErrorCode } from './core/app-error.js';
 export { AppError } from './core/app-error.js';
+export type { ToolState, ToolStateManager } from './hub/tool-state.js';
+export type { IntrospectionOptions } from './hub/introspection.js';
 
 export type { TextContentBlock, SuccessResult, ErrorResult } from './core/result.js';
 
@@ -99,6 +108,7 @@ export type { ExecutionHooks, LifecycleHooks } from './contracts/hooks.js';
 export type {
   TelemetryEvent,
   TelemetryRecorder,
+  SerializableTelemetrySnapshot,
   TelemetrySnapshot,
   ToolMetricsSnapshot,
   InMemoryTelemetryOptions,
@@ -124,8 +134,16 @@ export { createSamplingHelper } from './capabilities/sampling.js';
 export type { Root, RootsChangeHandler, RootsHandler } from './capabilities/roots.js';
 export { createRootsHandler } from './capabilities/roots.js';
 
-export type { McpServerOptions } from './transport/mcp/server.js';
-export { createMcpServer, startStdioServer } from './transport/mcp/server.js';
+export type {
+  ManagedMcpServer,
+  McpServerOptions,
+  RegisteredToolHandle,
+} from './transport/mcp/server.js';
+export {
+  createManagedMcpServer,
+  createMcpServer,
+  startStdioServer,
+} from './transport/mcp/server.js';
 export type { StreamableHttpOptions } from './transport/mcp/streamable-http.js';
 export { startStreamableHttpServer } from './transport/mcp/streamable-http.js';
 export type {
@@ -166,13 +184,37 @@ export async function bootstrap<
     contextFactory: options?.contextFactory,
     hooks: options?.hooks,
     telemetry: options?.telemetry,
+    stateManager: options?.stateManager,
   });
+
+  if (options?.introspection) {
+    const introspectionOptions = options.introspection === true ? undefined : options.introspection;
+
+    runtime.registry.register(
+      createIntrospectionTool<TConfig, TContext>(introspectionOptions, {
+        config,
+        registry: runtime.registry,
+        telemetry: options.telemetry,
+        stateManager: options.stateManager,
+        mcpbaseVersion: MCPBASE_VERSION,
+        transports: [options.transport ?? 'stdio'],
+        capabilities: {
+          tools: tools.length > 0,
+          resources: false,
+          prompts: false,
+          logging: false,
+          sampling: false,
+          roots: false,
+        },
+      }),
+    );
+  }
 
   await options?.lifecycle?.onStart?.(config);
 
   try {
-    const server = createMcpServer(runtime);
-    await startStdioServer(server);
+    const managedServer = createManagedMcpServer(runtime);
+    await startStdioServer(managedServer.server);
   } catch (startError) {
     try {
       await options?.lifecycle?.onShutdown?.();

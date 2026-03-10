@@ -1,0 +1,1 @@
+export const MCPBASE_VERSION = '2.0.0';

@@ -1,10 +1,18 @@
 # Davranis Kurallari
 
-Bu proje acik, saygili ve teknik olarak yapici bir is birligi ortami hedefler.
+[English](./CODE_OF_CONDUCT.md) | Turkce
 
-- kisiye degil probleme odaklanin
-- geri bildirimde somut ve uygulanabilir olun
-- dislayici, saldirgan veya kucumseyici dil kullanmayin
-- herkes icin ogrenilebilir bir kod tabani birakmaya calisin
+Bu proje issue, pull request ve dokumantasyon incelemelerinde saygili ve teknik olarak yapici bir is birligi bekler.
 
-Bakimcilar gerekli gordugunde tartismalari duzenleme ve uygunsuz davranislari sinirlama hakkini sakli tutar.
+## Beklenen davranis
+
+- Kisiye degil teknik probleme odaklanin.
+- Geri bildirimi somut, incelenebilir ve uygulanabilir tutun.
+- Kucumseyici, saldirgan veya dislayici dil kullanmayin.
+- Kod, test ve belgeleri sonraki katkici icin daha anlasilir bir halde birakin.
+
+## Uygulama
+
+Maintainer'lar gerektiginde tartismalari duzenleyebilir, verimsiz basliklari kapatabilir veya katilimi sinirlayabilir. Ayrica ayri bir davranis kurali iletisim kanali repoda belgelenmemistir ve maintainer dogrulamasi gerektirir.
+
+Son guncelleme: 2026-03-11

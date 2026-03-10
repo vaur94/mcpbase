@@ -1,20 +1,32 @@
 # Guvenlik Politikasi
 
+[English](./SECURITY.md) | Turkce
+
 ## Kapsam
 
-`mcpbase`, stdio-first bir referans tabandir. Guvenlik modeli deny-by-default mantigi uzerine kuruludur ve gelecekteki turetilmis sunucularin da ayni anlayisi korumasini bekler.
+`mcpbase`, stdio-first bir MCP temel kutuphanesidir. Kod tabani security helper'lari, deny-by-default guard'lari ve turetilmis sunucular icin ornekler sunar; ancak her turetilmis sunucu kendi tehdit modelinden ve yayin ortamindan sorumludur.
 
-## Bildirim sureci
+## Acik bildirme yolu
 
-- Guvenlik acigi bulursaniz halka acik issue yerine ozel iletisim tercih edin.
-- Uretim ortamina etkisi, tekrar uretim adimlari ve olasi etki alanini acik yazin.
-- Bakimci tarafi once sorunu dogrular, sonra duzeltme ve duyuru planini olusturur.
+- Henuz duyurulmamis guvenlik aciklari icin herkese acik GitHub issue acmayin.
+- Elinizde varsa once ozel maintainer iletisim kanalini tercih edin.
+- Ozel kanal bilinmiyorsa tercih edilen bildirim yolu icin maintainer dogrulamasi gerekir.
+- Etki, etkilenen surum, tekrar uretim adimlari ve ilgili guard/config varsayimlarini ekleyin.
 
-## Temel ilkeler
+## Repo guvenlik modeli
 
-- riskli ozellikler acik izin olmadan etkinlesmez
-- stdout log icin kullanilmaz
-- config alanlari belgesiz birakilmaz
-- yeni araclar guard ve test olmadan eklenmez
+- Riskli davranislar feature flag, command allowlist veya path allowlist ile korunmalidir.
+- Protokol akisinin bozulmamasi icin MCP loglari stderr uzerinden kalmalidir.
+- Yeni config alanlari kod degisikligiyle birlikte dokumante edilmelidir.
+- Dosya sistemi veya komut calistiran yeni araclar guard ve test ile gelmelidir.
 
-Detay model icin `docs/security/security-model.md` dosyasina bakin.
+## Desteklenen surumler
+
+Resmi surum destek penceresi repoda belgelenmemistir. Maintainer farkli belirtmedikce yalnizca en son yayinlanan surumu dogrulanmis guvenlik bakim hedefi olarak kabul edin.
+
+## Ilgili belgeler
+
+- Guvenlik modeli: [`docs/security/security-model.md`](./docs/security/security-model.md)
+- Destek yollari: [`SUPPORT.tr.md`](./SUPPORT.tr.md)
+
+Son guncelleme: 2026-03-11

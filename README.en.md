@@ -1,57 +1,23 @@
 # mcpbase
 
-[English](./README.en.md) | [Turkce](./README.tr.md)
+[English](./README.md) | [Turkce](./README.tr.md)
 
-`mcpbase` is the English project guide for the stdio-first MCP base repository. `README.md` is the default English landing page, while this file provides the same guidance as a dedicated language-specific entrypoint.
+This file is a language-specific entry point for the English documentation. The canonical English README is [`README.md`](./README.md).
 
-## Quick Start
+## Start here
 
-Preferred bootstrap path:
+- Requirements: Node.js `>=22.14.0`, npm `>=10.0.0`
+- Project overview and quick start: [`README.md`](./README.md)
+- English documentation index: [`docs/en/index.md`](./docs/en/index.md)
+- Turkish documentation index: [`docs/index.md`](./docs/index.md)
+- API overview: [`docs/en/api/v2-reference.md`](./docs/en/api/v2-reference.md)
+- Migration notes: [`docs/en/migration/v1-to-v2.md`](./docs/en/migration/v1-to-v2.md)
 
-```bash
-./scripts/install.sh
-```
+## Contributor docs
 
-Manual path:
+- Contributing: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
+- Security: [`SECURITY.md`](./SECURITY.md)
+- Support: [`SUPPORT.md`](./SUPPORT.md)
+- Release process: [`RELEASE.md`](./RELEASE.md)
 
-```bash
-npm install
-npm run build
-node dist/index.js --config examples/mcpbase.config.json
-```
-
-## What You Get
-
-- a reusable TypeScript MCP server foundation
-- a clear runtime pipeline for `initialize`, `tools/list`, and `tools/call`
-- strict validation with `zod`
-- structured stderr logging
-- deny-by-default security helpers
-- public-repository hygiene for GitHub and npm workflows
-
-## Architecture Map
-
-- `src/core` - result and error primitives
-- `src/application` - runtime orchestration and tool registration
-- `src/transport/mcp` - stdio server integration
-- `src/config` - default, file, env, and CLI configuration loading
-- `src/logging` - structured logger implementations
-- `src/security` - permission guards
-- `tests/` - unit, integration, and protocol verification
-
-## Documentation
-
-- Default English landing page: `README.md`
-- Turkish README: `README.tr.md`
-- English docs index: `docs/README.en.md`
-- English architecture docs: `docs/en/architecture/`
-- English developer docs: `docs/en/developer-guide/`
-- Turkish docs tree: `docs/`
-
-## When To Use It
-
-Use `mcpbase` when you want to start a new MCP server without rebuilding config loading, logging, validation, security guards, test layout, and release wiring from scratch.
-
-## License
-
-MIT. See `LICENSE`.
+Last updated: 2026-03-11

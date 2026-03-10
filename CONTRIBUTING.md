@@ -1,22 +1,26 @@
 # Contributing
 
-## Expected workflow
+English | [Turkce](./CONTRIBUTING.tr.md)
 
-1. Make small, meaningful changes.
-2. Do not open a pull request unless `npm run ci:check` passes.
-3. Use conventional commit messages.
-4. If you add a new tool, include its documentation and tests in the same pull request.
+## Workflow
+
+1. Install dependencies with `./scripts/install.sh` or run `npm install` and `npm run build`.
+2. Keep changes focused and repository-consistent.
+3. Run the narrowest relevant test command first, then finish with `npm run ci:check`.
+4. Update English and Turkish documentation together when behavior, commands, or public API change.
+5. Open pull requests with a conventional commit history and a clear validation summary.
 
 ## Expectations
 
-- no placeholders
-- no TODO comments
-- no untested changes in critical flows
-- stdout is reserved for the MCP protocol only
+- Preserve ESM-only imports with `.js` file extensions where applicable.
+- Do not use stdout for MCP logs.
+- Add or update tests for critical runtime, transport, security, or config behavior.
+- Keep root docs, docs pages, and examples aligned with `package.json`, workflows, and source exports.
 
-## Review focus
+## Review signals
 
-- layer boundaries stay intact
-- new config fields are documented
-- security guard needs are handled correctly
-- release and CI flows remain healthy
+- `CODEOWNERS` currently maps the repository to `@vaur94`.
+- Quality gates are defined in `.github/workflows/ci.yml` and `package.json`.
+- Docs changes should mention the affected pages in the pull request.
+
+Last updated: 2026-03-11

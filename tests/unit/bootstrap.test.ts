@@ -39,6 +39,13 @@ vi.mock('../../src/application/example-tools.js', () => ({
 }));
 
 vi.mock('../../src/transport/mcp/server.js', () => ({
+  createManagedMcpServer: vi.fn().mockReturnValue({
+    server: {
+      connect: vi.fn().mockResolvedValue(undefined),
+      registerTool: vi.fn(),
+    },
+    toolHandles: new Map(),
+  }),
   createMcpServer: vi.fn().mockReturnValue({
     connect: vi.fn().mockResolvedValue(undefined),
     registerTool: vi.fn(),
@@ -90,7 +97,7 @@ import type { BootstrapOptions } from '../../src/index.js';
 import { loadConfig } from '../../src/config/load-config.js';
 import { StderrLogger } from '../../src/logging/stderr-logger.js';
 import { createExampleTools } from '../../src/application/example-tools.js';
-import { createMcpServer, startStdioServer } from '../../src/transport/mcp/server.js';
+import { createManagedMcpServer, startStdioServer } from '../../src/transport/mcp/server.js';
 
 const inputSchema = z.object({ text: z.string() });
 
@@ -140,7 +147,7 @@ describe('bootstrap()', () => {
       expect(loadConfig).toHaveBeenCalled();
       expect(StderrLogger).toHaveBeenCalled();
       expect(createExampleTools).toHaveBeenCalled();
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
       expect(startStdioServer).toHaveBeenCalled();
     });
 
@@ -158,7 +165,7 @@ describe('bootstrap()', () => {
       await bootstrap({ tools: customTools });
 
       expect(createExampleTools).not.toHaveBeenCalled();
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
     });
 
     it('tools fonksiyon olarak verildiginde cagirir', async () => {
@@ -209,7 +216,7 @@ describe('bootstrap()', () => {
 
       await bootstrap({ hooks: hook });
 
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
     });
 
     it('hook dizisi verildiginde RuntimeOptions icine aktarir', async () => {
@@ -217,7 +224,7 @@ describe('bootstrap()', () => {
 
       await bootstrap({ hooks });
 
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
     });
   });
 
@@ -235,7 +242,7 @@ describe('bootstrap()', () => {
 
       await bootstrap({ contextFactory });
 
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
     });
   });
 
@@ -398,7 +405,7 @@ describe('bootstrap()', () => {
       });
 
       expect(createExampleTools).not.toHaveBeenCalled();
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
       expect(startStdioServer).toHaveBeenCalled();
     });
 
@@ -458,7 +465,7 @@ describe('bootstrap()', () => {
       });
 
       expect(loadConfig).toHaveBeenCalledWith(customSchema, expect.objectContaining({ argv: [] }));
-      expect(createMcpServer).toHaveBeenCalled();
+      expect(createManagedMcpServer).toHaveBeenCalled();
       expect(startStdioServer).toHaveBeenCalled();
     });
   });
@@ -516,7 +523,7 @@ describe('bootstrap telemetri entegrasyonu', () => {
     expect(runtimeConstructorSpy).toHaveBeenCalledWith(
       expect.objectContaining({ telemetry: undefined }),
     );
-    expect(createMcpServer).toHaveBeenCalled();
+    expect(createManagedMcpServer).toHaveBeenCalled();
     expect(startStdioServer).toHaveBeenCalled();
   });
 });

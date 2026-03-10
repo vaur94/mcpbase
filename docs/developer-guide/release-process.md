@@ -1,20 +1,29 @@
 # Release Sureci
 
-## Akis
+English version: [docs/en/developer-guide/release-process.md](../en/developer-guide/release-process.md)
 
-1. Conventional commit mesajlari `semantic-release` tarafindan analiz edilir.
-2. `main` dalina push oldugunda kalite isi tamamlanir.
-3. Release isi yeni surumu hesaplar.
-4. `CHANGELOG.md`, Git etiketi ve GitHub release olusturulur.
-5. `NPM_TOKEN` tanimliysa paket npm'e yayinlanir.
+## Dogrulanmis akis
 
-## Gerekli sirlar
+1. Pull request ve push olaylari `.github/workflows/ci.yml` icindeki kalite job'unu calistirir.
+2. `main` dalina gelen push'lar kalite kapilarini gectikten sonra `release` job'una ilerler.
+3. Release job'u `npm run release` komutunu calistirir.
+4. Bu komut `semantic-release` zincirini kullanarak surum analizini ve GitHub release adimlarini yonetir.
 
-- `GITHUB_TOKEN`
-- `NPM_TOKEN`
+## Dogrulanmis girdiler
 
-## Neden otomatik
+- Conventional commit gecmisi release analizine girer.
+- Workflow, release job'u icin `GITHUB_TOKEN` ortam degiskenini saglar.
+- Workflow izinleri `contents`, `issues`, `pull-requests` ve `id-token` yazma haklarini icerir.
 
-- manuel surum kaymasini azaltir
-- changelog ve yayin kaydini tek akista tutar
-- turetilmis MCP projelerinde ayni yaklasim tekrar kullanilir
+## Maintainer dogrulamasi gereken kisim
+
+Repo, npm publish kimlik dogrulama ayrintisini acikca anlatmiyor. `id-token: write` yetkisi mevcut olsa da uretimde npm trusted publishing mi yoksa farkli bir auth yolu mu kullanildigi maintainer tarafinda dogrulanmalidir.
+
+## Ilgili dosyalar
+
+- `.github/workflows/ci.yml`
+- `.releaserc.json`
+- `package.json`
+- `CHANGELOG.md`
+
+Son guncelleme: 2026-03-11

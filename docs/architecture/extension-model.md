@@ -1,5 +1,7 @@
 # Genisletme Modeli
 
+English version: [docs/en/architecture/extension-model.md](../en/architecture/extension-model.md)
+
 Yeni bir MCP projesi `mcpbase` uzerinden turetilirken asagidaki yol izlenir:
 
 1. `package.json`, README ve ornek config dosyalarindaki kimligi degistirin.
@@ -23,3 +25,5 @@ Yeni bir MCP projesi `mcpbase` uzerinden turetilirken asagidaki yol izlenir:
 - ornek araclar
 - guvenlik feature flag isimleri
 - integration dokumanlarindaki host ornekleri
+
+Son guncelleme: 2026-03-11

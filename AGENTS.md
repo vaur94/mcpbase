@@ -1,192 +1,105 @@
 # MCPBASE - PROJE BILGI TABANI
 
-**Olusturulma:** 2026-03-07
-**Commit:** f55291c
+**Olusturulma:** 2026-03-11 01:01 UTC
+**Commit:** a1756e0
 **Dal:** main
 
 ## GENEL BAKIS
 
-stdio-first, Turkish-first MCP sunucu referans mimarisi. TypeScript + Zod + ESM. Yeni MCP sunuculari bu depoyu temel alarak turetilir.
+`@vaur94/mcpbase`, TypeScript ile MCP sunuculari kurmak icin dagitilan temel kutuphane. Stdio varsayilan akistir; v2 yapisi capability modulleri, telemetry ve Streamable HTTP tasimasini da icerir.
 
 ## YAPI
 
-```
+```text
 mcpbase/
-├── src/
-│   ├── index.ts                    # Barrel export + bootstrap() giris noktasi
-│   ├── application/
-│   │   ├── runtime.ts              # ApplicationRuntime — arac yonetimi ve yurutme
-│   │   ├── tool-registry.ts        # ToolRegistry — ad→tanim eslestirme
-│   │   └── example-tools.ts        # server_info + text_transform ornek araclar
-│   ├── config/
-│   │   ├── load-config.ts          # 4 katmanli config yukleme (varsayilan→dosya→env→cli)
-│   │   └── default-config.ts       # Varsayilan yapilandirma degerleri
-│   ├── contracts/
-│   │   ├── runtime-config.ts       # RuntimeConfig Zod semasi
-│   │   └── tool-contract.ts        # ToolDefinition arayuzu
-│   ├── core/
-│   │   ├── app-error.ts            # AppError sinifi + ensureAppError()
-│   │   ├── execution-context.ts    # ToolExecutionContext arayuzu
-│   │   └── result.ts               # SuccessResult/ErrorResult + createTextContent()
-│   ├── infrastructure/
-│   │   ├── cli-args.ts             # CLI arguman ayristica
-│   │   └── json-file.ts            # JSON dosya okuyucu
-│   ├── logging/
-│   │   ├── logger.ts               # Logger arayuzu (soyut)
-│   │   └── stderr-logger.ts        # StderrLogger uygulamasi (JSON → stderr)
-│   ├── security/
-│   │   └── guards.ts               # assertFeatureEnabled/AllowedCommand/AllowedPath
-│   ├── shared/
-│   │   ├── merge.ts                # deepMerge yardimcisi
-│   │   ├── request-id.ts           # Benzersiz istek kimligi uretimi
-│   │   └── text.ts                 # Metin donusturme yardimcilari
-│   └── transport/
-│       └── mcp/
-│           └── server.ts           # createMcpServer() + startStdioServer()
-├── tests/
-│   ├── unit/                       # 9 birim test dosyasi
-│   ├── integration/                # Calisma zamani entegrasyon testi
-│   ├── protocol/                   # stdio uzerinden gercek MCP istemci testi
-│   └── fixtures/                   # createFixtureConfig() fabrika fonksiyonu
-├── docs/                           # Turkce dokumantasyon (mimari, guvenlik, rehberler)
-├── bin/cli.js                      # CLI giris noktasi (bootstrap() cagirir)
-└── examples/                       # Ornek config + turetilmis arac
+|- src/                 # Kutuphane kaynak kodu; ayrintili yerel rehber var
+|- tests/               # Unit + integration + protocol katmanlari; yerel rehber var
+|- docs/                # Turkce ana dokumantasyon + docs/en aynasi; yerel rehber var
+|- bin/cli.js           # Dagitilan CLI girisi
+|- examples/            # Turetilmis sunucu icin ornek config ve arac
+|- scripts/             # Kurulum yardimcilari
+|- tsup.config.ts       # 4 giris noktasini ESM olarak derler
+|- vitest.config.ts     # Test kapsama ve katman ayarlari
+`- package.json         # Paket kimligi, engine siniri, kalite komutlari
 ```
 
 ## NEREYE BAKMALI
 
-| Gorev                  | Konum                                                              | Notlar                                                  |
-| ---------------------- | ------------------------------------------------------------------ | ------------------------------------------------------- |
-| Yeni arac ekle         | `src/application/example-tools.ts`                                 | ToolDefinition arayuzunu uygula, ToolRegistry'ye kaydet |
-| Config genislet        | `src/contracts/runtime-config.ts` + `src/config/default-config.ts` | Zod semasini ve varsayilani birlikte guncelle           |
-| Guvenlik korumasi ekle | `src/security/guards.ts`                                           | Deny-by-default: her sey yasakli, acikca izin ver       |
-| MCP transport degistir | `src/transport/mcp/server.ts`                                      | Ince katman — runtime'a delege eder                     |
-| Hata islemleri         | `src/core/app-error.ts`                                            | AppErrorCode enum'a yeni kod ekle                       |
-| Test yaz               | `tests/unit/`                                                      | Vitest, describe/it/expect, Turkce test adlari          |
-| CI pipeline            | `.github/workflows/ci.yml`                                         | quality → release (main dalina push'ta)                 |
+| Gorev                      | Konum                                                                | Not                                                             |
+| -------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Bootstrap ve export yuzeyi | `src/index.ts`                                                       | Paket API'sinin merkezi; en cok export burada                   |
+| Tool yurutme akisi         | `src/application/runtime.ts`                                         | Hook, telemetry ve hata normallestirme buradan gecer            |
+| Tool kaydi                 | `src/application/tool-registry.ts`                                   | Ad cakismasi ve lookup kurallari                                |
+| Config yukleme             | `src/config/load-config.ts`                                          | defaults -> dosya -> env -> CLI precedence                      |
+| Runtime schema             | `src/contracts/runtime-config.ts`                                    | Generic runtime config ve schema ureticileri                    |
+| Capability yardimcilari    | `src/capabilities/`                                                  | resources, prompts, logging, sampling, roots                    |
+| Transport adaptoru         | `src/transport/`                                                     | stdio varsayilan, streamable-http opsiyonel                     |
+| Guvenlik                   | `src/security/`                                                      | deny-by-default guard'lar ve enforcement hook                   |
+| Telemetry                  | `src/telemetry/telemetry.ts`                                         | In-memory recorder ve snapshot hesaplari                        |
+| Hub (managed servers)      | `src/hub/`                                                           | Manifest, introspection, settings, tool state; yerel rehber var |
+| Paket alt exportlari       | `src/examples/index.ts`, `src/security/index.ts`, `src/hub/index.ts` | `./examples`, `./security`, `./hub` subpath'lari                |
+| Test stratejisi            | `tests/AGENTS.md`                                                    | Katman secimi ve build bagimliliklari                           |
+| Dokumantasyon guncellemesi | `docs/AGENTS.md`                                                     | Turkce + English ayna yapisi                                    |
 
 ## KOD HARITASI
 
-### Baslangic Akisi
+| Sembol                           | Tur      | Konum                                  | Rol                                                 |
+| -------------------------------- | -------- | -------------------------------------- | --------------------------------------------------- |
+| `bootstrap`                      | function | `src/index.ts`                         | Config yukler, runtime kurar, stdio server baslatir |
+| `ApplicationRuntime`             | class    | `src/application/runtime.ts`           | Tool execute pipeline'inin merkezi                  |
+| `ToolRegistry`                   | class    | `src/application/tool-registry.ts`     | ToolDefinition kayit/lookup katmani                 |
+| `loadConfig`                     | function | `src/config/load-config.ts`            | 4 katmanli config birlestirme                       |
+| `createRuntimeConfigSchema`      | function | `src/contracts/runtime-config.ts`      | Generic config schema genisletme noktasi            |
+| `createMcpServer`                | function | `src/transport/mcp/server.ts`          | SDK server kayit katmani                            |
+| `startStreamableHttpServer`      | function | `src/transport/mcp/streamable-http.ts` | HTTP streaming tasimasi                             |
+| `createTransport`                | function | `src/transport/transport-factory.ts`   | stdio/http secimi                                   |
+| `createInMemoryTelemetry`        | function | `src/telemetry/telemetry.ts`           | Bounded telemetry recorder                          |
+| `createSecurityEnforcementHook`  | function | `src/security/tool-security.ts`        | Feature gate enforcement                            |
+| `createHubManifest`              | function | `src/hub/manifest.ts`                  | Hub manifest olusturma ve dogrulama                 |
+| `createHubManifestFromBootstrap` | function | `src/hub/manifest.ts`                  | Bootstrap opsiyonlarindan manifest uretimi          |
+| `createToolStateManager`         | function | `src/hub/tool-state.ts`                | Tool enable/disable/hidden durum yonetimi           |
+| `createSettingsSchema`           | function | `src/hub/settings.ts`                  | UI settings schema ureticisi                        |
+| `createIntrospectionTool`        | function | `src/hub/introspection.ts`             | Sunucu introspection tool'u olusturma               |
 
-```
-bin/cli.js → bootstrap(argv)
-  → loadConfig(argv)           # varsayilan → JSON dosya → env → CLI override
-  → new StderrLogger(config)
-  → createExampleTools()       # ToolDefinition[] uretir
-  → new ApplicationRuntime(config, logger, tools)
-    → ToolRegistry.register()  # Her arac kaydedilir
-  → createMcpServer(runtime)   # McpServer araci → runtime.executeTool'a baglar
-  → startStdioServer(server)   # StdioServerTransport baslatir
-  → SIGINT/SIGTERM dinle
-```
+## KONVANSIYONLAR
 
-### Arac Yurutme Akisi
+- ESM-only: `type: module`, `moduleResolution: NodeNext`, import yollarinda `.js` uzantisi zorunlu.
+- `verbatimModuleSyntax: true`: type-only importlarda `import type` kullan.
+- `useUnknownInCatchVariables: true`: `catch` degiskenleri `unknown` olarak ele alinmali.
+- Tool adlari `snake_case`; input/output dogrulamasi Zod ile yapilir.
+- Test adlari agirlikla Turkce; runtime/tool metinleri ise repo genelinde Turkce + English karisik olabilir, mevcut dili koru.
+- `src/index.ts` paket API'si icin barrel gorevi gorur; yeni public API eklerken export yuzeyini burada ve README/API dokumunda birlikte guncelle.
 
-```
-MCP istegi gelir → runtime.executeTool(name, rawInput)
-  1. ToolRegistry.get(name)       # Araci bul (yoksa TOOL_NOT_FOUND)
-  2. assertFeatureEnabled()       # Guvenlik kontrolu (PERMISSION_DENIED)
-  3. inputSchema.parse(rawInput)  # Zod giris dogrulamasi (VALIDATION_ERROR)
-  4. tool.execute(input, context) # Arac mantigi calisir
-  5. outputSchema?.parse()        # Opsiyonel cikis dogrulamasi
-  6. SuccessResult veya ErrorResult don
-```
+## ANTI-PATTERNLER (BU PROJEDE)
 
-### Kritik Tip Imzalari
+- `as any`, `@ts-ignore`, `@ts-expect-error` kullanma.
+- Bos catch blogu birakma; hata normalize et veya yeniden firlat.
+- Stdout'a protokol disi log yazma; loglar stderr uzerinden gider.
+- Kritik akis degisikligini testsiz birakma.
+- Placeholder/TODO yorumu ekleme.
+- CJS cikti veya `require()` geri getirme.
 
-```typescript
-interface ToolDefinition<TInput, TOutput> {
-  name: string;
-  title: string;
-  description: string;
-  inputSchema: ZodObject<TInput>;
-  outputSchema?: ZodObject<TOutput>;
-  security?: { requiredFeature?: keyof RuntimeConfig['security']['features'] };
-  execute(input, context: ToolExecutionContext): Promise<ToolSuccessPayload>;
-}
+## BENZERSIZ NOKTALAR
 
-interface RuntimeConfig {
-  server: { name: string; version: string };
-  logging: { level: 'debug' | 'info' | 'warn' | 'error'; includeTimestamp: boolean };
-  security: {
-    features: Record<string, boolean>;
-    commands: { allowed: string[] };
-    paths: { allowed: string[] };
-  };
-}
-
-type AppErrorCode =
-  | 'CONFIG_ERROR'
-  | 'VALIDATION_ERROR'
-  | 'TOOL_NOT_FOUND'
-  | 'TOOL_EXECUTION_ERROR'
-  | 'PERMISSION_DENIED';
-```
-
-## KURALLAR
-
-### TypeScript Ayarlari (tsconfig.json)
-
-- `strict: true`, `noUncheckedIndexedAccess: true`, `noImplicitOverride: true`
-- `verbatimModuleSyntax: true` — type-only importlarda `type` zorunlu
-- `moduleResolution: NodeNext` — import yollarinda `.js` uzantisi zorunlu
-- `target: ES2022`, `lib: ["ES2022", "DOM"]`
-
-### ESLint
-
-- `@typescript-eslint/consistent-type-imports: error` — `import type` kullan
-- `@typescript-eslint/require-await: off` — await'siz async fonksiyonlara izin var
-
-### Prettier
-
-- `singleQuote: true`, `trailingComma: "all"`, `printWidth: 100`
-
-### Build (tsup)
-
-- Yalnizca ESM ciktisi (CJS yok)
-- `target: node20`, `splitting: false`, `sourcemap: true`, `dts: true`
-- Giris noktasi: `src/index.ts`
-
-### Test (Vitest)
-
-- Kapsama esikleri: lines %90, functions %90, branches %80, statements %90
-- Kapsama disinda: `src/index.ts`, `tool-contract.ts`, `execution-context.ts`, `logger.ts`
-- Test adlari Turkce yazilir
-- Protocol testleri build gerektirir: `npm run test:protocol`
-
-## YASAKLAR (BU PROJEDE)
-
-- `as any`, `@ts-ignore`, `@ts-expect-error` — ASLA
-- Bos catch bloklari `catch(e) {}` — ASLA
-- stdout'a MCP protokolu disinda yazma — ASLA (loglama stderr'e gider)
-- Placeholder kod veya TODO yorumlari — ASLA
-- Test olmadan kritik akis degisikligi — ASLA
-- CJS ciktisi — KASITLI OLARAK DEVRE DISI (top-level await uyumsuzlugu)
+- Eski kok rehber stdio-only template'i anlatiyordu; mevcut repo capability modulleri, telemetry, `./examples`, `./security` ve streamable HTTP export eder.
+- `docs/decisions/0001-stdio-first.md` stdio'yu varsayilan tasarim olarak anlatir; transport davranisini degistirirsen hem karar dokusunu hem API/reference sayfalarini yeniden eslestir.
+- `tests/protocol/stdio.protocol.test.ts` dogrudan `dist/index.js` ile konusur; protocol degisikliginde build-calisan yolu bozma.
 
 ## KOMUTLAR
 
 ```bash
-npm run ci:check          # Tam kalite kapisi: format + lint + typecheck + test:coverage + build
-npm run dev               # Izleme modunda gelistirme
-npm run test              # Tum testleri calistir
-npm run test:unit         # Yalnizca birim testleri
-npm run test:protocol     # Protokol testleri (once build gerekir)
-npm run test:coverage     # Kapsama raporuyla test
-npm run lint:fix          # Lint hatalarini otomatik duzelt
-npm run format            # Kodu formatla
-npm run typecheck         # Tip kontrolu
-npm run build             # Uretim derlemesi (dist/)
-npm run release           # semantic-release (yalnizca CI'da)
+npm run dev
+npm run build
+npm run typecheck
+npm run test
+npm run test:integration
+npm run test:protocol
+npm run test:coverage
+npm run ci:check
 ```
 
 ## NOTLAR
 
-- `@modelcontextprotocol/sdk` v1 monolitik paket kullanilir (v2 split paketleri henuz npm'de yok)
-- `skipLibCheck: true` — zod v4 ve SDK arasindaki tip uyumsuzlugu icin zorunlu
-- `allowSyntheticDefaultImports: true` — SDK'nin default import kaliplari icin
-- Config dosyasi varsayilan yol: `mcpbase.config.json` (proje kokunde)
-- Env degiskenleri `MCPBASE_` on ekiyle baslar (ornek: `MCPBASE_LOG_LEVEL=debug`)
-- Commit mesajlari conventional commits formatinda (semantic-release tetikler)
-- Tum kullaniciya yonelik metinler Turkce olmali
-- Bu depo bir urun degil; turetilecek MCP sunuculari icin temel alinir
+- Node >= 22.14.0, npm >= 10.0.0 beklenir.
+- `tsup.config.ts` su an `src/index.ts`, `src/examples/index.ts`, `src/security/index.ts`, `src/hub/index.ts` girislerini paketler.
+- `docs/` Turkce ana kaynaktir; `docs/en/` buyuk olcude paralel ilerler ama birebir ayna olmayan sayfalar da vardir.

@@ -17,6 +17,15 @@ export const baseRuntimeConfigSchema = z.object({
   logging: baseLoggingSchema,
 });
 
+export const baseSecuritySchema = z.object({
+  commands: z.object({
+    allowed: z.array(z.string().min(1)),
+  }),
+  paths: z.object({
+    allowed: z.array(z.string().min(1)),
+  }),
+});
+
 function deepPartialShape(shape: Record<string, z.ZodTypeAny>): Record<string, z.ZodTypeAny> {
   const result: Record<string, z.ZodTypeAny> = {};
   for (const [key, field] of Object.entries(shape)) {
@@ -45,6 +54,25 @@ export function createPartialRuntimeConfigSchema<T extends z.ZodRawShape>(
   return z.object(deepPartialShape(shape));
 }
 
+export function createSecurityConfigSchema<TFeatures extends z.ZodRawShape>(
+  featuresSchema: z.ZodObject<TFeatures>,
+) {
+  return z.object({
+    features: featuresSchema,
+    ...baseSecuritySchema.shape,
+  });
+}
+
+export function createSecuredRuntimeConfigSchema<TFeatures extends z.ZodRawShape>(
+  featuresSchema: z.ZodObject<TFeatures>,
+) {
+  return createRuntimeConfigSchema(
+    z.object({
+      security: createSecurityConfigSchema(featuresSchema),
+    }),
+  );
+}
+
 export type BaseRuntimeConfig<TExtras = unknown> = z.infer<typeof baseRuntimeConfigSchema> &
   TExtras;
 
@@ -56,26 +84,22 @@ type DeepPartial<T> = {
       : T[K];
 };
 
-const securityExtensionSchema = z.object({
-  security: z.object({
-    features: z.object({
-      serverInfoTool: z.boolean(),
-      textTransformTool: z.boolean(),
-    }),
-    commands: z.object({
-      allowed: z.array(z.string().min(1)),
-    }),
-    paths: z.object({
-      allowed: z.array(z.string().min(1)),
-    }),
-  }),
+const securityFeaturesSchema = z.object({
+  serverInfoTool: z.boolean(),
+  textTransformTool: z.boolean(),
 });
 
-export const runtimeConfigSchema = createRuntimeConfigSchema(securityExtensionSchema);
-export type RuntimeConfig = BaseRuntimeConfig<z.infer<typeof securityExtensionSchema>>;
+const securitySchema = createSecurityConfigSchema(securityFeaturesSchema);
+
+export const runtimeConfigSchema = createSecuredRuntimeConfigSchema(securityFeaturesSchema);
+export type RuntimeConfig = BaseRuntimeConfig<{ security: z.infer<typeof securitySchema> }>;
 
 export type PartialRuntimeConfig = DeepPartial<BaseRuntimeConfig>;
 export type PartialRuntimeConfigWithSecurity = DeepPartial<RuntimeConfig>;
 
 export const partialRuntimeConfigSchema: z.ZodType<PartialRuntimeConfigWithSecurity> =
-  createPartialRuntimeConfigSchema(securityExtensionSchema);
+  createPartialRuntimeConfigSchema(
+    z.object({
+      security: securitySchema,
+    }),
+  );

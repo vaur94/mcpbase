@@ -1,18 +1,29 @@
 # Security Model
 
-## Deny-by-default
+Turkce surum: [docs/security/security-model.md](../../security/security-model.md)
 
-`mcpbase` aims to prevent risky behaviors from being used without explicit permission. Therefore, feature flag, command allowlist, and path allowlist helpers are provided together.
+## Deny-by-default approach
 
-## Guard Philosophy
+`mcpbase` aims to keep risky behavior unavailable without explicit permission. The security helpers therefore combine feature flags, command allowlists, and path allowlists.
 
-- Feature flag: Is a tool or capability enabled
-- Command restriction: Which commands are allowed
-- Path restriction: Under which root can work be performed
+## Direct helpers
 
-## Safe Extension Rules
+- `assertFeatureEnabled`
+- `assertAllowedCommand`
+- `assertAllowedPath`
+- `createSecurityEnforcementHook`
 
-- If adding shell or file tools, guards are mandatory
-- New config fields are not added without documentation
-- Do not silently continue on error
-- Logs flow only over stderr
+## Safe development rules
+
+- Tools that touch the filesystem or execute commands should be guarded.
+- New config fields should not land without docs and tests.
+- MCP logging should stay on stderr.
+- Runtime and security changes should review both unit and integration coverage.
+
+## Related sources
+
+- `src/security/guards.ts`
+- `src/security/tool-security.ts`
+- `SECURITY.md`
+
+Last updated: 2026-03-11

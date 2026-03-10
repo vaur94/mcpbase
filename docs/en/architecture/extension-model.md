@@ -1,5 +1,7 @@
 # Extension Model
 
+Turkce surum: [docs/architecture/extension-model.md](../../architecture/extension-model.md)
+
 When deriving a new MCP project from `mcpbase`, follow this path:
 
 1. Change the identity in `package.json`, README, and example config files.
@@ -23,3 +25,5 @@ When deriving a new MCP project from `mcpbase`, follow this path:
 - Example tools
 - Security feature flag names
 - Host examples in integration documentation
+
+Last updated: 2026-03-11

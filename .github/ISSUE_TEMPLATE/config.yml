@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security issue reporting
+    url: https://github.com/vaur94/mcpbase/security/policy
+    about: Use the security policy and avoid public disclosure for vulnerabilities.
+  - name: Support guidance
+    url: https://github.com/vaur94/mcpbase/blob/main/SUPPORT.md
+    about: Read the support guide before opening a general issue.

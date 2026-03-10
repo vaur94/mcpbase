@@ -1,5 +1,7 @@
 # Arac Konvansiyonlari
 
+English version: [docs/en/tools/tool-conventions.md](../en/tools/tool-conventions.md)
+
 ## Adlandirma
 
 - `snake_case` arac adlari kullanin
@@ -21,3 +23,5 @@
 
 - title ve description doldurulmus olmali
 - feature flag ihtiyaci varsa `security.requiredFeature` tanimlanmali
+
+Son guncelleme: 2026-03-11

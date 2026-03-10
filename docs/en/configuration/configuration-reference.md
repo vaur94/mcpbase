@@ -1,5 +1,7 @@
 # Configuration Reference
 
+Turkce surum: [docs/configuration/configuration-reference.md](../../configuration/configuration-reference.md)
+
 ## Precedence Order
 
 1. Defaults in code
@@ -42,15 +44,21 @@
 ### `security.commands.allowed`
 
 - Type: string array
-- Purpose: Allowlist for future command-based tools
+- Purpose: Allowlist for command-executing tools
 
 ### `security.paths.allowed`
 
 - Type: string array
-- Purpose: Root restrictions for future file/path-based tools
+- Purpose: Root restrictions for file/path-based tools
 
 ## Examples
 
 - File-based: `examples/mcpbase.config.json`
 - Environment variable: `MCPBASE_LOG_LEVEL=debug`
-- CLI: `node dist/index.js --log-level debug --allow-command=git`
+- CLI: `node dist/index.js --config examples/mcpbase.config.json --server-name example-mcp-server --log-level debug`
+
+## Note
+
+The built-in CLI parser directly supports `--config`, `--server-name`, `--server-version`, `--log-level`, and `--logging-timestamp`. Fields such as `security.commands.allowed` and `security.paths.allowed` should be supplied through JSON config, environment variables, or a custom `cliMapper`.
+
+Last updated: 2026-03-11

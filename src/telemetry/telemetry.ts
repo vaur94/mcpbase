@@ -23,10 +23,20 @@ export interface TelemetrySnapshot {
   readonly overallP95LatencyMs: number;
 }
 
+export interface SerializableTelemetrySnapshot {
+  readonly tools: Readonly<Record<string, ToolMetricsSnapshot>>;
+  readonly totalCalls: number;
+  readonly totalErrors: number;
+  readonly overallErrorRate: number;
+  readonly overallP95LatencyMs: number;
+  readonly capturedAt: string;
+}
+
 /** Records telemetry events and produces snapshots. */
 export interface TelemetryRecorder {
   record(event: TelemetryEvent): void;
   snapshot(): TelemetrySnapshot;
+  toSerializable?: () => SerializableTelemetrySnapshot;
 }
 
 /** Options for the in-memory telemetry recorder. */
@@ -65,6 +75,20 @@ function createToolAccumulator(maxSamples: number): ToolAccumulator {
     durations: new Array<number>(maxSamples),
     writeIndex: 0,
     filled: false,
+  };
+}
+
+export function toSerializable(snapshot: TelemetrySnapshot): SerializableTelemetrySnapshot {
+  const tools: Record<string, ToolMetricsSnapshot> = {};
+
+  for (const [toolName, toolSnapshot] of snapshot.tools) {
+    tools[toolName] = toolSnapshot;
+  }
+
+  return {
+    ...snapshot,
+    tools,
+    capturedAt: new Date().toISOString(),
   };
 }
 
@@ -129,6 +153,10 @@ class InMemoryTelemetryRecorder implements TelemetryRecorder {
       overallErrorRate: totalCalls > 0 ? totalErrors / totalCalls : 0,
       overallP95LatencyMs: calculateP95FromSamples(allDurations),
     };
+  }
+
+  toSerializable(): SerializableTelemetrySnapshot {
+    return toSerializable(this.snapshot());
   }
 }
 

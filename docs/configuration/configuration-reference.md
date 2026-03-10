@@ -1,5 +1,7 @@
 # Konfigurasyon Referansi
 
+English version: [docs/en/configuration/configuration-reference.md](../en/configuration/configuration-reference.md)
+
 ## Oncelik sirasi
 
 1. kod icindeki varsayilanlar
@@ -42,15 +44,21 @@
 ### `security.commands.allowed`
 
 - Tur: string dizisi
-- Amac: gelecekteki komut tabanli araclar icin allowlist
+- Amac: komut calistiran araclar icin allowlist
 
 ### `security.paths.allowed`
 
 - Tur: string dizisi
-- Amac: gelecekteki dosya/yol tabanli araclar icin kok kisitlari
+- Amac: dosya/yol tabanli araclar icin kok kisitlari
 
 ## Ornekler
 
 - Dosya tabanli: `examples/mcpbase.config.json`
 - Ortam degiskeni: `MCPBASE_LOG_LEVEL=debug`
-- CLI: `node dist/index.js --log-level debug --allow-command=git`
+- CLI: `node dist/index.js --config examples/mcpbase.config.json --server-name example-mcp-server --log-level debug`
+
+## Not
+
+Yerlesik CLI parser, `--config`, `--server-name`, `--server-version`, `--log-level` ve `--logging-timestamp` bayraklarini dogrudan destekler. `security.commands.allowed` ve `security.paths.allowed` gibi alanlar JSON config, ortam degiskenleri veya ozel `cliMapper` ile tasinmalidir.
+
+Son guncelleme: 2026-03-11

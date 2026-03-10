@@ -11,6 +11,7 @@ import type {
 } from '../contracts/tool-contract.js';
 import type { Logger } from '../logging/logger.js';
 import type { TelemetryEvent, TelemetryRecorder } from '../telemetry/telemetry.js';
+import type { ToolStateManager } from '../hub/tool-state.js';
 import { createRequestId } from '../shared/request-id.js';
 import { ToolRegistry } from './tool-registry.js';
 
@@ -24,6 +25,7 @@ export interface RuntimeOptions<
   readonly contextFactory?: (toolName: string, requestId: string, config: TConfig) => TContext;
   readonly hooks?: ExecutionHooks<TContext> | ExecutionHooks<TContext>[];
   readonly telemetry?: TelemetryRecorder;
+  readonly stateManager?: ToolStateManager;
 }
 
 function createSuccessResult(
@@ -102,7 +104,7 @@ export class ApplicationRuntime<
     this.createContext = (toolName, requestId) => factory(toolName, requestId, this.config);
     this.#hooks = normalizeHooks<TContext>(options.hooks);
     this.#telemetry = options.telemetry;
-    this.registry = new ToolRegistry<TContext>();
+    this.registry = new ToolRegistry<TContext>({ stateManager: options.stateManager });
     for (const tool of options.tools) {
       this.registry.register(tool);
     }

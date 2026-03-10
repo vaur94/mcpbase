@@ -1,5 +1,7 @@
 # OpenCode Entegrasyonu
 
+English version: [docs/en/integration/opencode.md](../en/integration/opencode.md)
+
 OpenCode tarafinda stdio tabanli MCP sunucular komut ve arguman ciftleriyle tanimlanir.
 
 ```json
@@ -17,3 +19,5 @@ OpenCode tarafinda stdio tabanli MCP sunucular komut ve arguman ciftleriyle tani
 
 - release paketini kullaniyorsaniz `node_modules/.bin/mcpbase` yerine `mcpbase` bin komutunu da kullanabilirsiniz
 - loglar stderr uzerinden okunabilir; stdout karistirilmaz
+
+Son guncelleme: 2026-03-11

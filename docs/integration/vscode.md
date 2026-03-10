@@ -1,5 +1,7 @@
 # VS Code Entegrasyonu
 
+English version: [docs/en/integration/vscode.md](../en/integration/vscode.md)
+
 VS Code tarafinda `mcpbase` turevi bir sunucu kullanirken stdio komutunu dogrudan tanimlayin.
 
 ```json
@@ -20,3 +22,5 @@ VS Code tarafinda `mcpbase` turevi bir sunucu kullanirken stdio komutunu dogruda
 - stdout protokol icindir; ekstra log uretmeyin
 - config dosyasini acikca verin
 - gelistirme modunda `npm run build` sonrasinda dist uzerinden calisin
+
+Son guncelleme: 2026-03-11

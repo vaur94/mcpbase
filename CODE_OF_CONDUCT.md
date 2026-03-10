@@ -1,10 +1,18 @@
 # Code of Conduct
 
-This project aims for an open, respectful, and technically constructive collaboration environment.
+English | [Turkce](./CODE_OF_CONDUCT.tr.md)
 
-- focus on the problem, not the person
-- keep feedback concrete and actionable
-- do not use exclusionary, aggressive, or dismissive language
-- try to leave the codebase learnable for everyone
+This project expects respectful, technically constructive collaboration across issues, pull requests, and documentation reviews.
 
-Maintainers reserve the right to moderate discussions and restrict inappropriate behavior when needed.
+## Expected behavior
+
+- Focus on the technical problem, not the person.
+- Keep feedback concrete, reviewable, and actionable.
+- Avoid dismissive, aggressive, or exclusionary language.
+- Leave code, tests, and docs easier for the next contributor to understand.
+
+## Enforcement
+
+Maintainers may moderate conversations, close unproductive threads, or restrict participation when needed. A dedicated conduct contact is not documented in the repository and requires maintainer confirmation.
+
+Last updated: 2026-03-11

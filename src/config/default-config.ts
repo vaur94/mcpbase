@@ -11,18 +11,22 @@ export const baseDefaultConfig: BaseRuntimeConfig = {
   },
 };
 
+export const baseSecurityDefaults: Omit<RuntimeConfig['security'], 'features'> = {
+  commands: {
+    allowed: [],
+  },
+  paths: {
+    allowed: [],
+  },
+};
+
 export const defaultConfig: RuntimeConfig = {
   ...baseDefaultConfig,
   security: {
+    ...baseSecurityDefaults,
     features: {
       serverInfoTool: true,
       textTransformTool: true,
-    },
-    commands: {
-      allowed: [],
-    },
-    paths: {
-      allowed: [],
     },
   },
 };

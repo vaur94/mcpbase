@@ -26,9 +26,18 @@ Describe what happened instead.
 
 ## Environment
 
+- Package version:
 - Node.js version:
 - npm version:
 - OS:
+
+## Scope
+
+- [ ] stdio runtime
+- [ ] Streamable HTTP transport
+- [ ] hub helpers
+- [ ] security/config behavior
+- [ ] documentation only
 
 ## Additional context
 

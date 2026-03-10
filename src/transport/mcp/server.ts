@@ -8,6 +8,7 @@ import type {
 } from '../../capabilities/resources.js';
 import type { PromptDefinition, PromptTemplateDefinition } from '../../capabilities/prompts.js';
 import type { ToolDefinition } from '../../contracts/tool-contract.js';
+import type { ToolStateManager } from '../../hub/tool-state.js';
 
 import { registerResources, registerResourceTemplates } from '../../capabilities/resources.js';
 import { registerPrompts, registerPromptTemplates } from '../../capabilities/prompts.js';
@@ -23,15 +24,32 @@ export interface McpServerOptions {
   enableRoots?: boolean;
 }
 
-function registerTool(server: McpServer, runtime: ApplicationRuntime, tool: ToolDefinition): void {
+export interface RegisteredToolHandle {
+  readonly enabled: boolean;
+  enable(): void;
+  disable(): void;
+  remove(): void;
+}
+
+export interface ManagedMcpServer {
+  server: McpServer;
+  toolHandles: ReadonlyMap<string, RegisteredToolHandle>;
+}
+
+function registerTool(
+  server: McpServer,
+  runtime: ApplicationRuntime,
+  tool: ToolDefinition,
+): RegisteredToolHandle {
   const metadata = {
     title: tool.title,
     description: tool.description,
     inputSchema: tool.inputSchema,
     ...(tool.outputSchema ? { outputSchema: tool.outputSchema } : {}),
+    ...(tool.annotations ? { annotations: tool.annotations } : {}),
   };
 
-  server.registerTool(tool.name, metadata, async (input) => {
+  const handle = server.registerTool(tool.name, metadata, async (input) => {
     const result = await runtime.executeTool(tool.name, input);
 
     if (isErrorResult(result)) {
@@ -45,6 +63,93 @@ function registerTool(server: McpServer, runtime: ApplicationRuntime, tool: Tool
         : {}),
     };
   });
+
+  return handle as RegisteredToolHandle;
+}
+
+function listToolsForRegistration(
+  runtime: ApplicationRuntime,
+  stateManager: ToolStateManager | undefined,
+): Map<string, ToolDefinition> {
+  const toolsByName = new Map<string, ToolDefinition>();
+
+  for (const tool of runtime.listTools()) {
+    toolsByName.set(tool.name, tool);
+  }
+
+  if (!stateManager) {
+    return toolsByName;
+  }
+
+  for (const entry of stateManager.listStates()) {
+    const tool = runtime.registry.tryGet(entry.name);
+    if (tool) {
+      toolsByName.set(tool.name, tool);
+    }
+  }
+
+  return toolsByName;
+}
+
+function applyHandleStateFromManager(
+  handle: RegisteredToolHandle,
+  state: 'enabled' | 'disabled',
+): void {
+  if (state === 'enabled') {
+    handle.enable();
+    return;
+  }
+
+  handle.disable();
+}
+
+function ensureToolHandle(
+  server: McpServer,
+  runtime: ApplicationRuntime,
+  toolDefinitions: ReadonlyMap<string, ToolDefinition>,
+  toolHandles: Map<string, RegisteredToolHandle>,
+  toolName: string,
+): RegisteredToolHandle | undefined {
+  const existingHandle = toolHandles.get(toolName);
+  if (existingHandle) {
+    return existingHandle;
+  }
+
+  const tool = toolDefinitions.get(toolName);
+  if (!tool) {
+    return undefined;
+  }
+
+  const handle = registerTool(server, runtime, tool);
+  toolHandles.set(toolName, handle);
+  return handle;
+}
+
+function syncToolHandleWithState(
+  server: McpServer,
+  runtime: ApplicationRuntime,
+  toolDefinitions: ReadonlyMap<string, ToolDefinition>,
+  toolHandles: Map<string, RegisteredToolHandle>,
+  toolName: string,
+  state: 'enabled' | 'disabled' | 'hidden',
+): void {
+  if (state === 'hidden') {
+    const existingHandle = toolHandles.get(toolName);
+    if (!existingHandle) {
+      return;
+    }
+
+    existingHandle.remove();
+    toolHandles.delete(toolName);
+    return;
+  }
+
+  const handle = ensureToolHandle(server, runtime, toolDefinitions, toolHandles, toolName);
+  if (!handle) {
+    return;
+  }
+
+  applyHandleStateFromManager(handle, state);
 }
 
 function buildCapabilities(options?: McpServerOptions): Record<string, object> {
@@ -77,6 +182,13 @@ export function createMcpServer(
   runtime: ApplicationRuntime,
   options?: McpServerOptions,
 ): McpServer {
+  return createManagedMcpServer(runtime, options).server;
+}
+
+export function createManagedMcpServer(
+  runtime: ApplicationRuntime,
+  options?: McpServerOptions,
+): ManagedMcpServer {
   const server = new McpServer(
     {
       name: runtime.config.server.name,
@@ -87,8 +199,28 @@ export function createMcpServer(
     },
   );
 
-  for (const tool of runtime.listTools()) {
-    registerTool(server, runtime, tool);
+  const toolHandles = new Map<string, RegisteredToolHandle>();
+  const stateManager = runtime.registry.getStateManager();
+  const toolDefinitions = listToolsForRegistration(runtime, stateManager);
+
+  for (const [toolName, tool] of toolDefinitions) {
+    const state = stateManager?.getState(toolName) ?? 'enabled';
+    if (state === 'hidden') {
+      continue;
+    }
+
+    const handle = registerTool(server, runtime, tool);
+    toolHandles.set(tool.name, handle);
+
+    if (stateManager) {
+      applyHandleStateFromManager(handle, state);
+    }
+  }
+
+  if (stateManager) {
+    stateManager.onChange((toolName, state) => {
+      syncToolHandleWithState(server, runtime, toolDefinitions, toolHandles, toolName, state);
+    });
   }
 
   if (options?.resources !== undefined && options.resources.length > 0) {
@@ -107,7 +239,7 @@ export function createMcpServer(
     registerPromptTemplates(server, options.promptTemplates);
   }
 
-  return server;
+  return { server, toolHandles };
 }
 
 export async function startStdioServer(server: McpServer): Promise<StdioServerTransport> {

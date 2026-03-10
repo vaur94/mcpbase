@@ -14,6 +14,14 @@ Describe the gap or pain point.
 
 Describe the feature or improvement you want.
 
+## Scope
+
+- [ ] runtime or bootstrap API
+- [ ] capability helpers
+- [ ] transport layer
+- [ ] security or telemetry
+- [ ] documentation or examples
+
 ## Expected outcome
 
 Explain how this helps maintainers or derived MCP servers.

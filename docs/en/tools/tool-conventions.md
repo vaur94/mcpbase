@@ -1,5 +1,7 @@
 # Tool Conventions
 
+Turkce surum: [docs/tools/tool-conventions.md](../../tools/tool-conventions.md)
+
 ## Naming
 
 - Use `snake_case` for tool names
@@ -21,3 +23,5 @@
 
 - `title` and `description` must be filled
 - If a feature flag is needed, define `security.requiredFeature`
+
+Last updated: 2026-03-11
