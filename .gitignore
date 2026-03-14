@@ -8,3 +8,4 @@ coverage/
 /.vscode/
 /.turbo/
 package-lock.json.bak
+.prompt/
